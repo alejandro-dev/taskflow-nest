@@ -1,0 +1,37 @@
+services:
+  api-getawey:
+    build: ./api-getawey
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api-getawey:/app
+    env_file:
+      - ./api-getawey/.env 
+
+  auth:
+    build: ./auth
+    ports:
+      - "3001:3001"
+    depends_on:
+      - auth-db
+    volumes:
+      - ./auth:/app
+    env_file:
+      - ./auth/.env 
+
+  auth-db:
+    image: mongo:latest
+    container_name: auth-db
+    restart: always
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+  rabbitmq:
+    container_name: rabbitmq-taskflow
+    image: rabbitmq:3.12.4-management-alpine
+    ports:
+      - 5672:5672
+      - 15672:15672
