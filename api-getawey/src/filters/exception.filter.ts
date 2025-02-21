@@ -5,10 +5,8 @@ import { map } from 'rxjs/operators';
 @Injectable()
 export class RpcExceptionInterceptor implements NestInterceptor {
    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-      console.log('next', next.handle())
       return next.handle().pipe(
          map((response) => {
-            console.log('response', response)
             // Verificamos si la respuesta contiene un error y ajustamos el código de estado HTTP
             if (response && response.statusCode && response.statusCode >= 400) {
                context.switchToHttp().getResponse().status(response.statusCode); // Ajustar el código de estado

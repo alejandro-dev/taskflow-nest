@@ -19,6 +19,17 @@ services:
     env_file:
       - ./auth/.env 
 
+  tasks:
+    build: ./tasks
+    ports:
+      - "3002:3002"
+    depends_on:
+      - tasks-db
+    volumes:
+      - ./tasks:/app
+    env_file:
+      - ./tasks/.env 
+
   auth-db:
     image: mongo:latest
     container_name: auth-db
@@ -28,7 +39,17 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
-
+  tasks-db:
+    image: postgres:latest
+    container_name: tasks-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: tasks
+      
   rabbitmq:
     container_name: rabbitmq-taskflow
     image: rabbitmq:3.12.4-management-alpine

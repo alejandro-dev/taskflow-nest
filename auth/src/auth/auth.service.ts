@@ -56,12 +56,10 @@ export class AuthService {
 
 			// Delete the password, active and updatedAt from the user object
 			const { active, password: passUser, createdAt, updatedAt, ...userLogged } = user.toObject();
-			//console.log('userLogged',userLogged);
+
 			return { user: userLogged, token: this.signToken({id: userLogged.id, email: userLogged.email}), status: 'success'};
 
 		} catch (error) {
-			console.log(error);
-
 			if(error instanceof RpcException) throw error;
 
 			throw new RpcException({
