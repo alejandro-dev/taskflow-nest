@@ -8,9 +8,16 @@ import { PrismaService } from 'prisma/prisma.service';
 export class TasksService {
    constructor(private prisma: PrismaService) {}
 
-   create(createTaskDto: CreateTaskDto) {
-      return 'This action adds a new task';
-   }
+   async create(createTaskDto: CreateTaskDto) {
+      // return 'This action adds a new task';
+      return await this.prisma.task.create({
+         data: {
+           title: createTaskDto.title,
+           description: createTaskDto.description || null,
+           assignedTo: createTaskDto.assignedTo
+         },
+       });
+   } 
 
    async findAll() {
       const tasks = await this.prisma.task.findMany();

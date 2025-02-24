@@ -39,6 +39,9 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./auth-db:/data/db
+
   tasks-db:
     image: postgres:latest
     container_name: tasks-db
@@ -49,6 +52,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: tasks
+    volumes:
+      - ./tasks-db:/var/lib/postgresql/data
       
   rabbitmq:
     container_name: rabbitmq-taskflow
