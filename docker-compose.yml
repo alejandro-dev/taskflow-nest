@@ -29,6 +29,8 @@ services:
       - ./tasks:/app
     env_file:
       - ./tasks/.env 
+    networks:
+      - app-network
 
   auth-db:
     image: mongo:latest
@@ -52,6 +54,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: tasks
+    networks:
+      - app-network
     volumes:
       - ./tasks-db:/var/lib/postgresql/data
       
@@ -61,3 +65,7 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,4 +1,4 @@
-import { IsDateString, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsDateString, IsOptional, IsString, IsUUID, Matches } from "class-validator";
 
 export class CreateTaskDto {
     @IsString()
@@ -8,7 +8,7 @@ export class CreateTaskDto {
     @IsOptional()
     description?: string;
 
-    @IsUUID()
+    @Matches(/^[0-9a-fA-F]{24}$/, { message: 'assignedTo must be a valid MongoDB ObjectId' })
     assignedTo: string;
 
     @IsDateString()
