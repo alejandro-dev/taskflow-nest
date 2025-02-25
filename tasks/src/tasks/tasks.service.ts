@@ -145,8 +145,8 @@ export class TasksService {
             }
          });
 
-         // TODO: cuando sea un servicio real, se debe retornar un throw RpcException
-         if(!task) return new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+         // If the task doesn't exist, throw an error
+         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
          return { status: 'success', task };
 
@@ -157,20 +157,60 @@ export class TasksService {
       }
    }
 
-   async update(id: string, updateTaskDto: UpdateTaskDto) {
+   /**
+    * 
+    * @param id 
+    * @param updateTaskDto 
+    * @returns 
+    * 
+    * @example
+    * {
+    *    "title": "Task title",
+    *    "description": "Task description",
+    *    "assignedTo": "1234567890abcdef12345678",
+    *    "dueDate": "2025-02-25T00:00:00.000Z",
+    *    "status": "pendiente",
+    *    "priority": "media"
+    * }
+    * @example
+    * {
+    *    "status": "success",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title"
+    *    }
+    * }
+    * @example
+    * {
+    *    "statusCode": 404,
+    *    "error": "Not Found",
+    *    "message": "Task not found"    
+    * }
+    * @example
+    * {
+    *    "statusCode": 400,
+    *    "error": "Bad Request",
+    *    "message": [
+    *      "title is not allowed to be empty",
+    *      "title must be a string"
+    *    ]
+    * }
+    */
+   // async update(id: string, updateTaskDto: UpdateTaskDto) {
+   async update(updateTaskDto: UpdateTaskDto) {
       try {
          const task = await this.prisma.task.findUnique({
             where: {
-               id: id
+               id: updateTaskDto.id
             }
          });
 
-         // TODO: cuando sea un servicio real, se debe retornar un throw RpcException
-         if(!task) return new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+         // If the task doesn't exist, throw an error
+         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
          const taskUpdated = await this.prisma.task.update({
             where: {
-               id: id
+               id: updateTaskDto.id
             },
             data: updateTaskDto
          });
@@ -180,7 +220,7 @@ export class TasksService {
       } catch (error) {
          handleRpcError(error);
       }
-      return `This action updates a #${id} task`;
+      return `This action updates a #${updateTaskDto.id} task`;
    }
 
    /**
@@ -209,8 +249,8 @@ export class TasksService {
             }
          });
 
-         // TODO: cuando sea un servicio real, se debe retornar un throw RpcException
-         if(!task) return new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+         // If the task doesn't exist, throw an error
+         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
          // Delete the task
          await this.prisma.task.delete({

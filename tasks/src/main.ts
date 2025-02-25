@@ -4,9 +4,24 @@ import { envs } from './config/envs';
 import { RpcExceptionFilter } from './tasks/filters/exception.filter';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { QueuesEnum } from './enums/queuesEnum';
 
 async function bootstrap() {
-   const app = await NestFactory.create(AppModule);
+   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+      AppModule,
+      {
+         transport: Transport.RMQ,
+         options: {
+            urls: [envs.RMQ_URL!],
+            queue: QueuesEnum.TASKS_QUEUE,
+            queueOptions: {
+               durable: true,
+            },
+            noAck: true
+         }   
+      }
+   );
 
    app.useGlobalPipes(
       new ValidationPipe({
@@ -33,6 +48,6 @@ async function bootstrap() {
    // Apply the global filter to the app
    app.useGlobalFilters(new RpcExceptionFilter());
 
-   await app.listen(envs.PORT);
+   await app.listen();
 }
 bootstrap();

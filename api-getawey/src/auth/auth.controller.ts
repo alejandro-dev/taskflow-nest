@@ -1,4 +1,4 @@
-	import { Controller, Get, Post, Body, Inject, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
+	import { Controller, Get, Post, Body, Inject, HttpException, HttpStatus, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 	import { Services } from 'src/enums/services.enum';
 	import { ClientProxy, RpcException } from '@nestjs/microservices';
 	import { CreateUserDto } from './dto/create-user.dto';
@@ -124,7 +124,7 @@ import { LoginUserDto } from './dto/login-user.dto';
 			return await firstValueFrom(
 				this.authService.send('auth.login', loginUserDto).pipe(
 					catchError((error) => {
-						throw new BadRequestException(error.message || 'Error creating user');
+						throw new InternalServerErrorException(error.message || 'Error logging in user');
 					})
 				)
 			);
