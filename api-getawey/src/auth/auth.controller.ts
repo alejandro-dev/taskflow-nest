@@ -62,6 +62,14 @@ export class AuthController {
 	 *     ],
 	 * }
 	 * 
+	 * @example 
+     * // User already exists response
+     * statusCode: 400  
+     * {
+     *     "message": "User already exists",
+     * 	   "status": "fail",
+     * }
+	 * 
 	 * @example
 	 * // Internal Server Error response
 	 * statusCode: 500

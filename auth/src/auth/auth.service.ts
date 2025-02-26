@@ -14,13 +14,24 @@ export class AuthService {
 	/**
 	 * 
 	 * @description Sign the token
-	 * @param payload 
-	 * @returns 
+	 * @param payload - The payload to sign the token
+	 * @param payload.id - The id of the user
+	 * @param payload.email - The email of the user
 	 * 
 	 * @example
+	 * // Example success response
+	 * statusCode: 200 
 	 * {
 	 * 	"id": "1234567890abcdef12345678",
 	 * 	"email": "alex@gmail.com"
+	 * }
+	 * 
+	 * @example
+	 * // Internal Server Error response
+	 * statusCode: 500
+	 * {
+	 * 	"message": "Internal Server Error",
+	 * 	"status": 'error',
 	 * }
 	 */
 	private signToken(payload: { id: string; email: string }): string {
@@ -33,19 +44,32 @@ export class AuthService {
 	/**
 	 * 
 	 * @description Create a new user
-	 * @param createUserDto 
-	 * @returns 
+	 * @param createUserDto - The user data to create a new user
+	 * @param createUserDto.email - The email of the user
+	 * @param createUserDto.password - The password of the user
 	 * 
 	 * @example
+	 * // Example success response
+	 * statusCode: 200
 	 * {
 	 * 	"status": "success",
 	 * 	"message": "Create user"
 	 * }
+	 * 
 	 * @example
+	 * // Example bad request response
+	 * statusCode: 400
 	 * {
 	 * 	"message": "User already exists",
-	 * 	"statusCode": 400,
-	 * 	"error": "Bad Request",
+	 * 	"stastus": "fail",
+	 * }
+	 * 
+	 * @example
+	 * // Internal Server Error response
+	 * statusCode: 500
+	 * {
+	 * 	"message": "Internal Server Error",
+	 * 	"status": 'error',
 	 * }
 	 */
 	async create(createUserDto: CreateUserDto) {
@@ -70,10 +94,13 @@ export class AuthService {
 	/**
 	 * 
 	 * @description Login a user
-	 * @param loginUserDto 
-	 * @returns 
+	 * @param loginUserDto - The user data to login a user
+	 * @param loginUserDto.email - The email of the user
+	 * @param loginUserDto.password - The password of the user
 	 * 
 	 * @example
+	 * // Example success response
+	 * statusCode: 200
 	 * {
 	 * 	"status": "success",
 	 * 	"token": "eyjdslkjdfl...",
@@ -83,10 +110,20 @@ export class AuthService {
 	 * 	}
 	 * }
 	 * @example
+	 * // Example bad request response
+	 * statusCode: 400
 	 * {
 	 * 	"message": "Email or password incorrect",
 	 * 	"statusCode": 400,
 	 * 	"error": "Bad Request",
+	 * }
+	 * 
+	 * @example
+	 * // Internal Server Error response
+	 * statusCode: 500
+	 * {
+	 * 	"message": "Internal Server Error",
+	 * 	"status": 'error',
 	 * }
 	 */
 	async login(loginUserDto: LoginUserDto) {
@@ -107,22 +144,18 @@ export class AuthService {
 			return { user: userLogged, token: this.signToken({id: userLogged.id, email: userLogged.email}), status: 'success'};
 
 		} catch (error) {
-			if(error instanceof RpcException) throw error;
-
-			throw new RpcException({
-				message: 'Internal Server Error',
-				status: HttpStatus.INTERNAL_SERVER_ERROR,
-			});
+			handleRpcError(error);
 		}
 	}
 
 	/**
 	 * 
 	 * @description Verify the token
-	 * @param token 
-	 * @returns 
+	 * @param token - The token to verify
 	 * 
 	 * @example
+	 * // Example success response
+	 * statusCode: 200
 	 * {
 	 * 	"token": "eyjdslkjdfl...",
 	 * 	"user": {
@@ -130,23 +163,40 @@ export class AuthService {
 	 * 		"email": "alex@gmail.com"
 	 * 	}
 	 * }
+	 * 
 	 * @example
+	 * // Token expired response
+	 * statusCode: 401
 	 * {
 	 * 	"message": "Token expired",
 	 * 	"statusCode": 401,
 	 * 	"error": "Unauthorized",
 	 * }
+	 * 
+	 * @example
+	 * // Internal Server Error response
+	 * statusCode: 500
+	 * {
+	 * 	"message": "Internal Server Error",
+	 * 	"status": 'error',
+	 * }
 	 */
-	verifyToken(token: string){
-        const payload = this.jwtService.verify(token, {
-            secret: process.env.JWT_SECRET
-        });
+	verifyToken(token: string): any {
+		try {
+			// Verify the token
+			const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
+	
+			// If the token is invalid, throw an error
+			if(!payload) throw new UnauthorizedException();
+	
+			return { 
+				status: 'success', 
+				token: this.signToken({id: payload.id, email: payload.email}), 
+				user: { id: payload.id, email: 	payload.email } 
+			};
 
-        if(!payload) throw new UnauthorizedException();
-
-        return { 
-            token: this.signToken({id: payload.id, email: payload.email}), 
-            user: { id: payload.id, email: payload.email } 
-        };
+		} catch (error) {
+			handleRpcError(error);
+		}
     }
 }

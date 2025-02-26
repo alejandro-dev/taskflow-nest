@@ -341,6 +341,7 @@ export class TasksController {
    /**
     * 
     * @route DELETE /tasks/:id
+    * 
     * @description Delete a task by id
     * @param id {string} The id of the task
     * @returns {Promise<Object>} The response contain the operation status and the message

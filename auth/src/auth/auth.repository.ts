@@ -9,9 +9,10 @@ export class UserRepository {
 
    /**
     * 
-    * @param email 
-    * @returns 
+    * @param email - The email of the user
     * @description Find a user by email
+    * @returns {Promise<User | null>} The user found or null if not found
+    *
     */
    async findByEmail(email: string): Promise<User | null> {
       return this.userModel.findOne({ email }).exec();
@@ -19,10 +20,10 @@ export class UserRepository {
 
    /**
     * 
-    * @param email 
-    * @param password 
-    * @returns 
+    * @param email - The email of the user
+    * @param password - The password of the user
     * @description Create a new user
+    * @returns {Promise<User>} The created user
     * 
     */
    async createUser(email: string, password: string): Promise<User> {

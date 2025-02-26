@@ -1,6 +1,11 @@
 import { RpcException } from '@nestjs/microservices';
 import { HttpStatus } from '@nestjs/common';
 
+/**
+ * 
+ * @param error 
+ * @description Handle the RpcException and throw a generic Internal Server Error if the error is not an RpcException
+ */
 export function handleRpcError(error: any) {
     if (error instanceof RpcException) throw error;
 
