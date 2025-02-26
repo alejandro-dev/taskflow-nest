@@ -1,39 +1,163 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, InternalServerErrorException, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, InternalServerErrorException, Put, UseGuards } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { Services } from 'src/enums/services.enum';
 import { catchError, firstValueFrom, Observable } from 'rxjs';
+import { AuthGuard } from 'src/guards/auth.guards';
 
 @Controller('tasks')
 export class TasksController {
    constructor(@Inject(Services.TASKS_SERVICE) private readonly tasksService: ClientProxy) {}
 
+   /**
+    * 
+    * @route GET /tasks/healt
+    * @description Healthcheck endpoint to check if the service is up and running
+    * 
+    * @response 200 {string} status - "success"
+    * @response 400 {string} message - "Bad Request"
+    * @response 401 {string} message - "Unauthorized"
+    * @response 500 {string} message - "Internal Server Error"
+    * 
+    * @messagePattern tasks.healt
+    * @example
+    * {
+    *     "status": "success"
+    * }
+    */
+   @UseGuards(AuthGuard)
    @Get('healt')
    healt(): Observable<any> {
       return this.tasksService.send({ cmd: "healt_tasks" },  {})
    }
 
-  @Post()
-  async create(@Body() createTaskDto: CreateTaskDto): Promise<any> {
-      try {
-         // We convert the Observable to a Promise and catch the errors
-         return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.create' }, { ...createTaskDto }).pipe(
-               catchError((error) => {
-                  console.log(error);
-                  throw new InternalServerErrorException(error.message || 'Error creating task');
-               })
-            )
-         );
+   /**
+    * @route POST /tasks
+    * @description Create a new task
+    * @returns {Promise<Object>} The response contain the operation status and the created task
+    * 
+    * @param createTaskDto Object with the task data
+    * @param createTaskDto.title {string} The title of the task
+    * @param createTaskDto.description {string} The description of the task
+    * @param createTaskDto.assignedTo {string} The id of the user assigned to the task
+    * @param createTaskDto.dueDate {string} The due date of the task
+    * @param createTaskDto.status {string} The status of the task
+    *   
+    * @response 200 {object} task - The created task
+    * @response 400 {string} message - "Bad Request"
+    * @response 401 {string} message - "Unauthorized"
+    * @response 500 {string} message - "Internal Server Error"
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "message": "Task created successfully",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pendiente",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z" 
+    * }
+    * 
+    * @example
+    * // Example bad request response
+    * statusCode: 400
+    * {
+    *    "status": "fail",
+    *    "error": "Your request is invalid",
+    *    "message": [
+    *      "title is not allowed to be empty",
+    *      "title must be a string"
+    *    ]
+    * }
+    * 
+    * @example
+    * // Unauthorized response
+    * statusCode: 401
+    * {
+    *    "statusCode": 401,
+    *    "error": "Unauthorized",
+    *    "message": "Token expired"
+    * }
+    * 
+    */
+   @UseGuards(AuthGuard)
+   @Post()
+   async create(@Body() createTaskDto: CreateTaskDto): Promise<any> {
+         try {
+            // We convert the Observable to a Promise and catch the errors
+            return await firstValueFrom(
+               this.tasksService.send({ cmd: 'tasks.create' }, { ...createTaskDto }).pipe(
+                  catchError((error) => {
+                     console.log(error);
+                     throw new InternalServerErrorException(error.message || 'Error creating task');
+                  })
+               )
+            );
 
-      } catch (error) {
-         throw error;
-      }
-  }
+         } catch (error) {
+            throw error;
+         }
+   }
 
+   /**
+    * 
+    * @route GET /tasks
+    * @description Get all tasks
+    * @returns {Promise<Object>} The response contain the operation status and the tasks
+    * 
+    * @response 200 {object} tasks - The tasks
+    * @response 401 {string} message - "Unauthorized"
+    * @response 500 {string} message - "Internal Server Error"
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "tasks": [
+    *      {
+    *        "id": "1234567890abcdef12345678",
+    *        "title": "Task title",
+    *        "description": "Task description",
+    *        "assignedTo": "1234567890abcdef12345678",
+    *        "dueDate": "2025-02-25T00:00:00.000Z",
+    *        "status": "pendiente",
+    *        "priority": "media",
+    *        "createdAt": "2025-02-25T00:00:00.000Z",
+    *        "updatedAt": "2025-02-25T00:00:00.000Z"
+    *      }
+    *    ]
+    * }
+    * 
+    * @example
+    * // Unauthorized response
+    * statusCode: 401
+    * {
+    *    "statusCode": 401,
+    *    "error": "Unauthorized",
+    *    "message": "Token expired"
+    * }
+    *
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    */
+   @UseGuards(AuthGuard)
    @Get()
-   async findAll() {
+   async findAll(): Promise<Object> {
       try {
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
@@ -50,8 +174,64 @@ export class TasksController {
       }
    }
 
+   /**
+    *
+    * @route GET /tasks/:id
+    * @description Get a task by id
+    * @param id {string} The id of the task
+    * @returns {Promise<Object>} The response contain the operation status and the task
+    * 
+    * @response 200 {object} task - The task    
+    * @response 401 {string} message - "Unauthorized"
+    * @response 404 {string} message - "Not Found"
+    * @response 500 {string} message - "Internal Server Error"
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pendiente",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *    }
+    * }
+    * 
+    * @example
+    * // Unauthorized response
+    * statusCode: 401
+    * {
+    *    "statusCode": 401,
+    *    "error": "Unauthorized",
+    *    "message": "Token expired"
+    * }
+    * 
+    * @example
+    * // Not Found response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    */
+   @UseGuards(AuthGuard)
    @Get(':id')
-   async findOne(@Param('id') id: string) {
+   async findOne(@Param('id') id: string): Promise<Object> {
       try {
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
@@ -68,8 +248,79 @@ export class TasksController {
       }
    }
 
+   /**
+    *
+    * @route PUT /tasks/:id
+    * 
+    * @param id {string} The id of the task
+    * @param updateTaskDto {object} The task data to update
+    * @returns {Promise<Object>} The response contain the operation status and the updated task
+    * 
+    * @response 200 {object} task - The updated task
+    * @response 400 {string} message - "Bad Request"
+    * @response 401 {string} message - "Unauthorized"
+    * @response 404 {string} message - "Not Found"
+    * @response 500 {string} message - "Internal Server Error"
+    *
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "message": "Task updated successfully",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pendiente",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *   }
+    * }
+    * 
+    * @example 
+    * // Bad Request response
+    * statusCode: 400 
+    * {
+    *    "status": "fail",
+    *    "error": "Your request is invalid",
+    *    "message": [
+    *      "title is not allowed to be empty",
+    *      "title must be a string"
+    *    ]
+    * }
+    * 
+    * @example 
+    * // Unauthorized response 
+    * statusCode: 401
+    * {
+    *    "statusCode": 401,
+    *    "error": "Unauthorized",
+    *    "message": "Unauthorized"
+    * }
+    * 
+    * @example
+    * // Not Found response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"  
+    * }
+    */
+   @UseGuards(AuthGuard)
    @Put(':id')
-   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
+   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto): Promise<Object> {
       try {
          const userUpdated = { ...updateTaskDto, id };
          // We convert the Observable to a Promise and catch the errors
@@ -87,8 +338,53 @@ export class TasksController {
       }
    }
 
+   /**
+    * 
+    * @route DELETE /tasks/:id
+    * @description Delete a task by id
+    * @param id {string} The id of the task
+    * @returns {Promise<Object>} The response contain the operation status and the message
+    * 
+    * @response 200 {object} message - The message
+    * @response 401 {string} message - "Unauthorized"
+    * @response 404 {string} message - "Not Found"
+    * @response 500 {string} message - "Internal Server Error"
+    *
+    * @example
+    * // Example success response
+    * statusCode: 200 
+    * {
+    *    "status": "success",
+    *    "message": "The task #1234567890abcdef12345678 has been deleted"
+    * }
+    * 
+    * @example 
+    * // Unauthorized response   
+    * statusCode: 401
+    * {
+    *    "statusCode": 401,
+    *    "message": "Unauthorized",
+    * }
+    * 
+    * @example 
+    * // Not Found response   
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    */
+   @UseGuards(AuthGuard)
    @Delete(':id')
-   async remove(@Param('id') id: string) {
+   async remove(@Param('id') id: string): Promise<Object> {
       try {
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(

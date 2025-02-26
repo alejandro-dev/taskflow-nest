@@ -92,4 +92,31 @@ export class AuthController {
             return error;
         }
     }
+
+    /**
+     * 
+     * @param token 
+     * @returns 
+     * @description Verify the token
+     * @messagePattern auth.verify-token
+     * @example
+     * {
+     *     "token": "eyjdslkjdfl...",
+     *     "user": {
+     *         "id": "1234567890abcdef12345678",
+     *         "email": "alex@gmail.com"
+     *     }
+     * }
+     * @example
+     * {
+     *     "message": "Token expired",
+     *     "statusCode": 401,
+     *     "error": "Unauthorized",
+     * }
+     */
+    @MessagePattern('auth.verify-token')
+    verifyToken(@Payload("token") token: string){
+        return this.authService.verifyToken(token);
+    }
+
 }

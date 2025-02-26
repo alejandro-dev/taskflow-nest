@@ -1,0 +1,12 @@
+import { RpcException } from '@nestjs/microservices';
+import { HttpStatus } from '@nestjs/common';
+
+export function handleRpcError(error: any) {
+    if (error instanceof RpcException) throw error;
+
+    // If the error is not an RpcException, throw a generic Internal Server Error
+    throw new RpcException({
+        message: 'Internal Server Error',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+    });
+}
