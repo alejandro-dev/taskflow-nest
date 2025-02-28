@@ -17,7 +17,12 @@ export class TasksController {
     */
    @MessagePattern({ cmd: 'healt_tasks' })
    healt(): { healt: boolean } {
-      return { healt: true };
+      try {
+         return { healt: true };
+         
+      } catch (error) {
+         return error;
+      }
    }
 
    /**

@@ -1,15 +1,16 @@
-import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from './auth.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { handleRpcError } from 'src/filters/error-handler.filter';
+import Redis from 'ioredis';
 
 @Injectable()
 export class AuthService {
-	// Inject the user repository to communicate with the user repository and the jwt service to sign the token
-	constructor(private readonly userRepository: UserRepository, private readonly jwtService: JwtService) {}
+	// Inject the user repository to communicate with the user repository and the jwt service to sign the token and the redis client to publish the user.register event
+	constructor(private readonly userRepository: UserRepository, private readonly jwtService: JwtService, @Inject('REDIS_CLIENT') private readonly redis: Redis) {}
 
 	/**
 	 * 
@@ -84,6 +85,9 @@ export class AuthService {
 			// Create the user
 			await this.userRepository.createUser(email, password);
 
+			await this.redis.publish('user.register', JSON.stringify({ email }));
+			this.redis.quit();
+			
 			return { status: 'success', message: 'Create user' };
 		
 		} catch (error) {

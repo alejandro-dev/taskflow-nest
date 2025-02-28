@@ -29,7 +29,12 @@ export class TasksController {
    @UseGuards(AuthGuard)
    @Get('healt')
    healt(): Observable<any> {
-      return this.tasksService.send({ cmd: "healt_tasks" },  {})
+      try {
+         return this.tasksService.send({ cmd: "healt_tasks" }, {})
+
+      } catch (error) {
+         throw error;
+      }
    }
 
    /**
@@ -92,20 +97,20 @@ export class TasksController {
    @UseGuards(AuthGuard)
    @Post()
    async create(@Body() createTaskDto: CreateTaskDto): Promise<any> {
-         try {
-            // We convert the Observable to a Promise and catch the errors
-            return await firstValueFrom(
-               this.tasksService.send({ cmd: 'tasks.create' }, { ...createTaskDto }).pipe(
-                  catchError((error) => {
-                     console.log(error);
-                     throw new InternalServerErrorException(error.message || 'Error creating task');
-                  })
-               )
-            );
+      try {
+         // We convert the Observable to a Promise and catch the errors
+         return await firstValueFrom(
+            this.tasksService.send({ cmd: 'tasks.create' }, { ...createTaskDto }).pipe(
+               catchError((error) => {
+                  console.log(error);
+                  throw new InternalServerErrorException(error.message || 'Error creating task');
+               })
+            )
+         );
 
-         } catch (error) {
-            throw error;
-         }
+      } catch (error) {
+         throw error;
+      }
    }
 
    /**

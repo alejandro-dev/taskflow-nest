@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema, User } from './schemas/auth.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { envs } from 'src/config/envs';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
    imports: [
@@ -13,9 +14,10 @@ import { envs } from 'src/config/envs';
       JwtModule.register({
          secret: envs.JWT_SECRET,
          signOptions: {
-         expiresIn: '3h'
+            expiresIn: '3h'
          }
-      })
+      }),
+      RedisModule
    ],
    controllers: [AuthController],
    providers: [AuthService, UserRepository],

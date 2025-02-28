@@ -1,5 +1,6 @@
 import { RpcException } from '@nestjs/microservices';
-import { HttpStatus } from '@nestjs/common';
+import { HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { JsonWebTokenError, TokenExpiredError } from '@nestjs/jwt';
 
 /**
  * 

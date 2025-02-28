@@ -27,12 +27,18 @@ export class AuthGuard implements CanActivate {
 
 		try {
 			// Verify the token
-			const {token: renewToken, user} = await firstValueFrom(this.authService.send('auth.verify-token', { token }));
+			const response = await firstValueFrom(this.authService.send('auth.verify-token', { token }));
+			if(response.error) throw new HttpException({ status: "fail", message: "Unauthorized" }, HttpStatus.UNAUTHORIZED);
+
+			// Destructure the response
+			const {token: renewToken, user} = response;
 			request['token'] = renewToken;
 			request['user'] = user;
+			
 			return renewToken;
 		
 		} catch(error) {
+			console.log(error);
 			// If the token is invalid, throw an error
 			throw new HttpException({ status: "fail", message: "Unauthorized" }, HttpStatus.UNAUTHORIZED);
 		}      

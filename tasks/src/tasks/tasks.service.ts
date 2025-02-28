@@ -1,13 +1,14 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { RpcException } from '@nestjs/microservices';
 import { handleRpcError } from './filters/error-handler.filter';
+import Redis from 'ioredis';
 
 @Injectable()
 export class TasksService {
-   constructor(private prisma: PrismaService) {}
+   constructor(private prisma: PrismaService, @Inject('REDIS_CLIENT') private readonly redis: Redis) {}
 
    /**
     * 
@@ -72,9 +73,17 @@ export class TasksService {
             },
          });
 
+         const notificationData = {
+            message: 'Task created successfully',
+         }
+
+         await this.redis.publish('task.assigned', JSON.stringify(notificationData));
+         this.redis.quit();
+
          return { status: 'success', task, message: 'Task created successfully' };
 
       } catch (error) {
+         console.log(error);
          handleRpcError(error);
       }
    } 

@@ -20,7 +20,7 @@ async function bootstrap() {
             },
             noAck: true
          }   
-      }
+      },
    );
 
    app.useGlobalPipes(

@@ -7,6 +7,9 @@ services:
       - ./api-getawey:/app
     env_file:
       - ./api-getawey/.env 
+    depends_on:
+      - auth
+      - tasks
     networks:
       - app-network
 
@@ -33,6 +36,17 @@ services:
       - ./tasks:/app
     env_file:
       - ./tasks/.env 
+    networks:
+      - app-network
+
+  notifications:
+    build: ./notifications
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./notifications:/app
+    env_file:
+      - ./notifications/.env 
     networks:
       - app-network
 
@@ -73,6 +87,18 @@ services:
       - 15672:15672
     networks:
       - app-network
+  
+  redis:
+    container_name: redis-taskflow
+    image: redis:latest
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - app-network
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./redis:/data
 
 networks:
   app-network:
