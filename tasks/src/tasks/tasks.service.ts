@@ -6,6 +6,7 @@ import { RpcException } from '@nestjs/microservices';
 import { handleRpcError } from './filters/error-handler.filter';
 import Redis from 'ioredis';
 import { ChangeStatusDto } from './dto/change-status.dto';
+import { AssignAuthorDto } from './dto/assign-author.dto';
 
 @Injectable()
 export class TasksService {
@@ -70,7 +71,7 @@ export class TasksService {
             data: {
               title: createTaskDto.title,
               description: createTaskDto.description || null,
-              assignedTo: createTaskDto.assignedTo
+              assignedTo: createTaskDto.assignedTo || null
             },
          });
 
@@ -84,7 +85,6 @@ export class TasksService {
          return { status: 'success', task, message: 'Task created successfully' };
 
       } catch (error) {
-         console.log(error);
          handleRpcError(error);
       }
    } 
@@ -396,7 +396,83 @@ export class TasksService {
             }
          });
 
-         return { status: 'success', task: taskUpdated, message: 'Task updated successfully' };
+         return { status: 'success', task: taskUpdated, message: 'Task stastus updated successfully' };
+
+      } catch (error) {
+         handleRpcError(error);
+      }
+   }
+
+   /**
+    * 
+    * @returns {Promise<Object | any>} The response contain the operation status and the updated task
+    * 
+    * @description Assign the author of a task by id
+    *
+    * @param assignAuthorDto - The task data to assign the author of a task
+    * @param assignAuthorDto.id - The id of the task
+    * @param assignAuthorDto.assignedTo - The id of the user assigned to the task
+    * 
+    * @messagePattern tasks.assign-author
+    *
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "message": "Task author updated successfully"
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",    
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *   }
+    * }
+    * 
+    * @example
+    * // Not found task response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    */
+   async assignAuthor(assignAuthorDto: AssignAuthorDto): Promise<Object | any> {
+      try {
+         // Check if the task exists
+         const task = await this.prisma.task.findUnique({
+            where: {
+               id: assignAuthorDto.id
+            }
+         });
+
+         // If the task doesn't exist, throw an error
+         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+
+         // Update the task
+         const taskUpdated = await this.prisma.task.update({
+            where: {
+               id: assignAuthorDto.id
+            },
+            data: {
+               assignedTo: assignAuthorDto.assignedTo
+            }
+         });
+
+         return { status: 'success', task: taskUpdated, message: 'Task author updated successfully' };
 
       } catch (error) {
          handleRpcError(error);

@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, InternalServerErrorException, Put, UseGuards } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Services } from 'src/enums/services.enum';
 import { catchError, firstValueFrom, Observable } from 'rxjs';
 import { AuthGuard } from 'src/guards/auth.guards';
+import { ChangeStatusDto } from './dto/change-status.dto';
+import { AssignAuthorDto } from './dto/assign-author.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -475,15 +477,35 @@ export class TasksController {
     */
    @UseGuards(AuthGuard)
    @Patch(':id/change-status')
-   async changeStatus(@Param('id') id: string, @Body() body: { status: string }) {
+   async changeStatus(@Param('id') id: string, @Body() changeStatusDto: ChangeStatusDto) {
       try {
-         const taskStateUpdated = { id, status: body.status };
+         const taskStateUpdated = { id, status: changeStatusDto.status };
 
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.change-status' }, { ...taskStateUpdated }).pipe(
                catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error deleting task');
+               })
+            )
+         );
+
+      } catch (error) {
+         throw error;
+      }
+   }
+
+   @UseGuards(AuthGuard)
+   @Patch(':id/assign-author')
+   async assignAuthor(@Param('id') id: string, @Body() assignAuthorDto: AssignAuthorDto) {
+      try {
+         const taskStateUpdated = { id, assignedTo: assignAuthorDto.assignedTo };
+
+         // We convert the Observable to a Promise and catch the errors
+         return await firstValueFrom(
+            this.tasksService.send({ cmd: 'tasks.assign-author' }, { ...taskStateUpdated }).pipe(
+               catchError((error) => {
+                  throw new InternalServerErrorException(error.message || 'Error author updated task');
                })
             )
          );

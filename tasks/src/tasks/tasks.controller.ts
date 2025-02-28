@@ -4,6 +4,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ChangeStatusDto } from './dto/change-status.dto';
+import { AssignAuthorDto } from './dto/assign-author.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -330,6 +331,61 @@ export class TasksController {
    changeStatus(@Payload() changeStatusDto: ChangeStatusDto): Object {
       try {
          return this.tasksService.changeStatus(changeStatusDto);
+
+      } catch (error) {
+         return error;
+      }
+   }
+
+   /**
+    * 
+    * @returns {Promise<Object | any>} The response contain the operation status and the updated task
+    * 
+    * @description Assign the author of a task by id
+    *
+    * @param assignAuthorDto - The task data to assign the author of a task
+    * @param assignAuthorDto.id - The id of the task
+    * @param assignAuthorDto.assignedTo - The id of the user assigned to the task
+    *
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "message": "Task author updated successfully"
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",    
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *   }
+    * }
+    * 
+    * @example
+    * // Not found task response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    */
+   @MessagePattern({ cmd: 'tasks.assign-author' })
+   assignAuthor(@Payload() assignAuthorDto: AssignAuthorDto): Object {
+      try {
+         return this.tasksService.assignAuthor(assignAuthorDto);
 
       } catch (error) {
          return error;

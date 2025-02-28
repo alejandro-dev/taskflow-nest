@@ -1,6 +1,7 @@
 services:
   api-getawey:
     build: ./api-getawey
+    restart: always
     ports:
       - "3000:3000"
     volumes:
@@ -15,6 +16,7 @@ services:
 
   auth:
     build: ./auth
+    restart: always
     ports:
       - "3001:3001"
     depends_on:
@@ -28,6 +30,7 @@ services:
 
   tasks:
     build: ./tasks
+    restart: always
     ports:
       - "3002:3002"
     depends_on:
@@ -41,6 +44,7 @@ services:
 
   notifications:
     build: ./notifications
+    restart: always
     ports:
       - "3003:3003"
     volumes:
