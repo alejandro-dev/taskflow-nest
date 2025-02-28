@@ -3,10 +3,15 @@ import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { ChangeStatusDto } from './dto/change-status.dto';
 
 @Controller('tasks')
 export class TasksController {
    constructor(private readonly tasksService: TasksService) {}
+
+   onModuleInit() {
+      console.log('🟢  Microservicio TaskService iniciado y escuchando eventos');
+   }
 
    /**
     * 
@@ -51,7 +56,7 @@ export class TasksController {
     *      "description": "Task description",
     *      "assignedTo": "1234567890abcdef12345678",
     *      "dueDate": "2025-02-25T00:00:00.000Z",
-    *      "status": "pendiente",
+    *      "status": "pending",
     *      "priority": "media",
     *      "createdAt": "2025-02-25T00:00:00.000Z",
     *      "updatedAt": "2025-02-25T00:00:00.000Z" 
@@ -108,7 +113,7 @@ export class TasksController {
     *        "description": "Task description",
     *        "assignedTo": "1234567890abcdef12345678",
     *        "dueDate": "2025-02-25T00:00:00.000Z",
-    *        "status": "pendiente",
+    *        "status": "pending",
     *        "priority": "media",
     *        "createdAt": "2025-02-25T00:00:00.000Z",
     *        "updatedAt": "2025-02-25T00:00:00.000Z"
@@ -155,7 +160,7 @@ export class TasksController {
     *      "description": "Task description",
     *      "assignedTo": "1234567890abcdef12345678",
     *      "dueDate": "2025-02-25T00:00:00.000Z",
-    *      "status": "pendiente",
+    *      "status": "pending",
     *      "priority": "media",
     *      "createdAt": "2025-02-25T00:00:00.000Z",
     *      "updatedAt": "2025-02-25T00:00:00.000Z"
@@ -281,6 +286,50 @@ export class TasksController {
    remove(@Payload('id') id: string): Object {
       try {
          return this.tasksService.remove(id);
+
+      } catch (error) {
+         return error;
+      }
+   }
+
+   /**
+    * 
+    * @returns {Object} The response contain the operation status and the updated task
+    * 
+    * @messagePattern tasks.change-status
+    * @description Change the status of a task by id
+    * 
+    * @param changeStatusDto - The task data to change the status of a task
+    * @param changeStatusDto.id - The id of the task
+    * @param changeStatusDto.status - The status of the task
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    * }
+    * 
+    * @example
+    * // Not found task response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    */
+   @MessagePattern({ cmd: 'tasks.change-status' })
+   changeStatus(@Payload() changeStatusDto: ChangeStatusDto): Object {
+      try {
+         return this.tasksService.changeStatus(changeStatusDto);
 
       } catch (error) {
          return error;

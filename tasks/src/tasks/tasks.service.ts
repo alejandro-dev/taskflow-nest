@@ -5,6 +5,7 @@ import { PrismaService } from 'prisma/prisma.service';
 import { RpcException } from '@nestjs/microservices';
 import { handleRpcError } from './filters/error-handler.filter';
 import Redis from 'ioredis';
+import { ChangeStatusDto } from './dto/change-status.dto';
 
 @Injectable()
 export class TasksService {
@@ -35,7 +36,7 @@ export class TasksService {
     *      "description": "Task description",
     *      "assignedTo": "1234567890abcdef12345678",
     *      "dueDate": "2025-02-25T00:00:00.000Z",
-    *      "status": "pendiente",
+    *      "status": "pending",
     *      "priority": "media",
     *      "createdAt": "2025-02-25T00:00:00.000Z",
     *      "updatedAt": "2025-02-25T00:00:00.000Z" 
@@ -107,7 +108,7 @@ export class TasksService {
     *        "description": "Task description",
     *        "assignedTo": "1234567890abcdef12345678",
     *        "dueDate": "2025-02-25T00:00:00.000Z",
-    *        "status": "pendiente",
+    *        "status": "pending",
     *        "priority": "media",
     *        "createdAt": "2025-02-25T00:00:00.000Z",
     *        "updatedAt": "2025-02-25T00:00:00.000Z"
@@ -154,7 +155,7 @@ export class TasksService {
     *      "description": "Task description",
     *      "assignedTo": "1234567890abcdef12345678",
     *      "dueDate": "2025-02-25T00:00:00.000Z",
-    *      "status": "pendiente",
+    *      "status": "pending",
     *      "priority": "media",
     *      "createdAt": "2025-02-25T00:00:00.000Z",
     *      "updatedAt": "2025-02-25T00:00:00.000Z"
@@ -322,6 +323,80 @@ export class TasksService {
          });
 
          return { status: 'success', message: `The task #${id} has been deleted` };
+
+      } catch (error) {
+         handleRpcError(error);
+      }
+   }
+
+   /**
+    * 
+    * @returns {Promise<Object | any>} The response contain the operation status and the updated task
+    * 
+    * @description Change the status of a task by id
+    * 
+    * @param changeStatusDto - The task data to change the status of a task
+    * @param changeStatusDto.id - The id of the task
+    * @param changeStatusDto.status - The status of the task
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "message": "Task updated successfully"
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *   }
+    * }
+    * 
+    * @example
+    * // Not found task response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    */
+   async changeStatus(changeStatusDto: ChangeStatusDto): Promise<Object | any> {
+      try {
+         // Check if the task exists
+         const task = await this.prisma.task.findUnique({
+            where: {
+               id: changeStatusDto.id
+            }
+         });
+
+         // If the task doesn't exist, throw an error
+         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+
+         // Update the task
+         const taskUpdated = await this.prisma.task.update({
+            where: {
+               id: changeStatusDto.id
+            },
+            data: {
+               status: changeStatusDto.status
+            }
+         });
+
+         return { status: 'success', task: taskUpdated, message: 'Task updated successfully' };
 
       } catch (error) {
          handleRpcError(error);

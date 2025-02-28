@@ -5,7 +5,7 @@ CREATE TABLE "tasks" (
     "description" TEXT,
     "assignedTo" TEXT NOT NULL,
     "dueDate" TIMESTAMP(3),
-    "status" TEXT NOT NULL DEFAULT 'pendiente',
+    "status" TEXT NOT NULL DEFAULT 'pending',
     "priority" TEXT NOT NULL DEFAULT 'media',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

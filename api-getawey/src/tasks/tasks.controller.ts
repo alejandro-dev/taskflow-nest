@@ -9,7 +9,7 @@ import { AuthGuard } from 'src/guards/auth.guards';
 @Controller('tasks')
 export class TasksController {
    constructor(@Inject(Services.TASKS_SERVICE) private readonly tasksService: ClientProxy) {}
-
+   
    /**
     * 
     * @route GET /tasks/healt
@@ -47,7 +47,7 @@ export class TasksController {
     * @param createTaskDto.description {string} The description of the task
     * @param createTaskDto.assignedTo {string} The id of the user assigned to the task
     * @param createTaskDto.dueDate {string} The due date of the task
-    * @param createTaskDto.status {string} The status of the task
+    * @param createTaskDto.status {string} The status of the task. It can be 'pending', 'in_progress' or 'done'
     *   
     * @response 200 {object} task - The created task
     * @response 400 {string} message - "Bad Request"
@@ -66,7 +66,7 @@ export class TasksController {
     *      "description": "Task description",
     *      "assignedTo": "1234567890abcdef12345678",
     *      "dueDate": "2025-02-25T00:00:00.000Z",
-    *      "status": "pendiente",
+    *      "status": "pending",
     *      "priority": "media",
     *      "createdAt": "2025-02-25T00:00:00.000Z",
     *      "updatedAt": "2025-02-25T00:00:00.000Z" 
@@ -102,7 +102,6 @@ export class TasksController {
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.create' }, { ...createTaskDto }).pipe(
                catchError((error) => {
-                  console.log(error);
                   throw new InternalServerErrorException(error.message || 'Error creating task');
                })
             )
@@ -135,7 +134,7 @@ export class TasksController {
     *        "description": "Task description",
     *        "assignedTo": "1234567890abcdef12345678",
     *        "dueDate": "2025-02-25T00:00:00.000Z",
-    *        "status": "pendiente",
+    *        "status": "pending",
     *        "priority": "media",
     *        "createdAt": "2025-02-25T00:00:00.000Z",
     *        "updatedAt": "2025-02-25T00:00:00.000Z"
@@ -168,7 +167,6 @@ export class TasksController {
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.findAll' }, {}).pipe(
                catchError((error) => {
-                  console.log(error);
                   throw new InternalServerErrorException(error.message || 'Error getting tasks');
                })
             )
@@ -202,7 +200,7 @@ export class TasksController {
     *      "description": "Task description",
     *      "assignedTo": "1234567890abcdef12345678",
     *      "dueDate": "2025-02-25T00:00:00.000Z",
-    *      "status": "pendiente",
+    *      "status": "pending",
     *      "priority": "media",
     *      "createdAt": "2025-02-25T00:00:00.000Z",
     *      "updatedAt": "2025-02-25T00:00:00.000Z"
@@ -242,7 +240,6 @@ export class TasksController {
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.findOne' }, { id }).pipe(
                catchError((error) => {
-                  console.log(error);
                   throw new InternalServerErrorException(error.message || 'Error getting task');
                })
             )
@@ -259,6 +256,12 @@ export class TasksController {
     * 
     * @param id {string} The id of the task
     * @param updateTaskDto {object} The task data to update
+    * @param updateTaskDto Object with the task data
+    * @param updateTaskDto.title {string} The title of the task
+    * @param updateTaskDto.description {string} The description of the task
+    * @param updateTaskDto.assignedTo {string} The id of the user assigned to the task
+    * @param updateTaskDto.dueDate {string} The due date of the task
+    * @param updateTaskDto.status {string} The status of the task. It can be 'pending', 'in_progress' or 'done'
     * @returns {Promise<Object>} The response contain the operation status and the updated task
     * 
     * @response 200 {object} task - The updated task
@@ -279,7 +282,7 @@ export class TasksController {
     *      "description": "Task description",
     *      "assignedTo": "1234567890abcdef12345678",
     *      "dueDate": "2025-02-25T00:00:00.000Z",
-    *      "status": "pendiente",
+    *      "status": "pending",
     *      "priority": "media",
     *      "createdAt": "2025-02-25T00:00:00.000Z",
     *      "updatedAt": "2025-02-25T00:00:00.000Z"
@@ -332,7 +335,6 @@ export class TasksController {
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.update' }, { ...userUpdated }).pipe(
                catchError((error) => {
-                  console.log(error);
                   throw new InternalServerErrorException(error.message || 'Error deleting task');
                })
             )
@@ -397,6 +399,90 @@ export class TasksController {
             this.tasksService.send({ cmd: 'tasks.delete' }, { id }).pipe(
                catchError((error) => {
                   console.log(error);
+                  throw new InternalServerErrorException(error.message || 'Error deleting task');
+               })
+            )
+         );
+
+      } catch (error) {
+         throw error;
+      }
+   }
+
+   /**
+    * 
+    * @returns {Promise<Object>} The response contain the operation status and the updated task
+    * @param id - The id of the task
+    * @param changeStatusDto - The task data to change the status of a task
+    * @param changeStatusDto.status - The status of the task. It can be 'pending', 'in_progress' or 'done'
+    * 
+    * @response 200 {object} task - The updated task
+    * @response 400 {string} message - "Bad Request"
+    * @response 401 {string} message - "Unauthorized"
+    * @response 404 {string} message - "Not Found"
+    * @response 500 {string} message - "Internal Server Error"
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "message": "Task updated successfully"
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *    }
+    * }
+    * 
+    * @example
+    * // Bad Request response
+    * statusCode: 400 
+    * {
+    *    "status": "fail",
+    *    "message": "Your request is invalid"
+    * }  
+    * 
+    * @example
+    * // Unauthorized response
+    * statusCode: 401
+    * {
+    *    "status": "fail",
+    *    "message": "Unauthorized",
+    * }
+    *       
+    * @example
+    * // Not found task response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"        
+    * }
+    */
+   @UseGuards(AuthGuard)
+   @Patch(':id/change-status')
+   async changeStatus(@Param('id') id: string, @Body() body: { status: string }) {
+      try {
+         const taskStateUpdated = { id, status: body.status };
+
+         // We convert the Observable to a Promise and catch the errors
+         return await firstValueFrom(
+            this.tasksService.send({ cmd: 'tasks.change-status' }, { ...taskStateUpdated }).pipe(
+               catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error deleting task');
                })
             )
