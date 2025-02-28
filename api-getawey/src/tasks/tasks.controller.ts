@@ -477,7 +477,7 @@ export class TasksController {
     */
    @UseGuards(AuthGuard)
    @Patch(':id/change-status')
-   async changeStatus(@Param('id') id: string, @Body() changeStatusDto: ChangeStatusDto) {
+   async changeStatus(@Param('id') id: string, @Body() changeStatusDto: ChangeStatusDto): Promise<Object> {
       try {
          const taskStateUpdated = { id, status: changeStatusDto.status };
 
@@ -495,9 +495,75 @@ export class TasksController {
       }
    }
 
+   /**
+    * 
+    * @param id - The id of the task
+    * @param assignAuthorDto - The task data to assign the author of a task
+    * @param assignAuthorDto.assignedTo - The id of the user assigned to the task
+    * 
+    * @returns {Promise<Object>} The response contain the operation status and the updated task
+    * 
+    * @response 200 {object} task - The updated task
+    * @response 400 {string} message - "Bad Request"
+    * @response 401 {string} message - "Unauthorized"
+    * @response 404 {string} message - "Not Found"
+    * @response 500 {string} message - "Internal Server Error"
+    *
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "message": "Task author updated successfully"
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",    
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *   }
+    * }
+    * 
+    * @example
+    * // Bad Request response
+    * statusCode: 400 
+    * {
+    *    "status": "fail",
+    *    "message": "Your request is invalid"
+    * }  
+    * 
+    * @example       
+    * // Unauthorized response
+    * statusCode: 401
+    * {
+    *    "statusCode": 401,
+    *    "message": "Unauthorized",
+    * }
+    *       
+    * @example
+    * // Not found task response
+    * statusCode: 404
+    * {
+    *    "status": "fail",    
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"        
+    * }
+    * 
+    */
    @UseGuards(AuthGuard)
    @Patch(':id/assign-author')
-   async assignAuthor(@Param('id') id: string, @Body() assignAuthorDto: AssignAuthorDto) {
+   async assignAuthor(@Param('id') id: string, @Body() assignAuthorDto: AssignAuthorDto): Promise<Object> {
       try {
          const taskStateUpdated = { id, assignedTo: assignAuthorDto.assignedTo };
 
