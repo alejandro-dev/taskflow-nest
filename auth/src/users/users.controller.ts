@@ -1,7 +1,7 @@
-import { Controller } from '@nestjs/common';
+import { Controller, HttpStatus } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { handleRpcError } from 'src/filters/error-handler.filter';
-import { MessagePattern } from '@nestjs/microservices';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 
 @Controller()
 export class UsersController {
@@ -55,4 +55,21 @@ export class UsersController {
          handleRpcError(error);
       }
    }
+
+   @MessagePattern({ cmd: 'users.findById' })
+   async findById(@Payload('id') id: string): Promise<Object | any> {
+      try {
+         // Check if the user exists
+         const user = await this.usersService.findById(id);
+
+         // If the user doesn't exist, throw an error
+         if(!user) throw new RpcException({ message: 'User not found', status: HttpStatus.NOT_FOUND });
+
+         return { status: 'success', user };
+
+      } catch (error) {
+         handleRpcError(error);
+      }
+   }
+   
 }

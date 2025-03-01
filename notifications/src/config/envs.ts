@@ -10,6 +10,7 @@ import * as joi from "joi";
 const envSchema = joi.object({
     REDIS_HOST: joi.string().required(),
     REDIS_PORT: joi.number().required(),
+    RMQ_URL: joi.string().required(),
 }).unknown(true);
 
 const { error, value } = envSchema.validate(process.env);
@@ -19,6 +20,7 @@ if(error) throw Error('Config validation error: ' + error.message);
 interface Env {
     REDIS_HOST: string;
     REDIS_PORT: number;
+    RMQ_URL: string;
 }
 const envVars: Env = value;
 
@@ -26,4 +28,5 @@ const envVars: Env = value;
 export const envs = {
     REDIS_HOST: envVars.REDIS_HOST as string,
     REDIS_PORT: envVars.REDIS_PORT as number,
+    RMQ_URL: envVars.RMQ_URL as string,
 };

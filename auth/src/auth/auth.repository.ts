@@ -15,7 +15,28 @@ export class UserRepository {
     *
     */
    async findByEmail(email: string): Promise<User | null> {
-      return this.userModel.findOne({ email }).exec();
+      try {
+         return this.userModel.findOne({ email }).exec();
+         
+      } catch (error) {
+         throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+   }
+
+   /**
+    * 
+    * @param id - The id of the user
+    * @description Find a user by id
+    * @returns {Promise<User | null>} The user found or null if not found
+    *
+    */
+   async findById(id: string, select: string[]): Promise<User | null> {
+      try {
+         return this.userModel.findById(id).select(select).exec();
+
+      } catch (error) {
+         throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
    }
 
    /**

@@ -1,56 +1,52 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import Redis from 'ioredis';
-import * as nodemailer from 'nodemailer';
-import { envs } from 'src/config/envs';
+import { BadRequestException, Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { RedisService } from './redis.service'; // RedisService extraído
+import { EmailService } from './email.service'; // EmailService extraído
+import { catchError, firstValueFrom } from 'rxjs';
+import { Services } from 'src/enums/services.enum';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
-   private redis: Redis;
-   constructor() {
-      this.redis = new Redis({
-         host: envs.REDIS_HOST,
-         port: envs.REDIS_PORT,
-      });
-   }
+   constructor(
+      @Inject(Services.AUTH_SERVICE) private readonly authService: ClientProxy,
+      private readonly redisService: RedisService,   // Inyección del servicio Redis
+      private readonly emailService: EmailService,   // Inyección del servicio Email
+   ) {}
 
    onModuleInit() {
-      // Subscribe to the user.register event
-      this.redis.subscribe('user.register', 'task.assigned');
-
-      // Listen for messages on the user.register channel
-      this.redis.on('message', async (channel, message) => {
-         console.log('log1');
-         if (channel === 'user.register') {
-            const { email } = JSON.parse(message);
-            this.sendEmail(email, 'Gracias por registrarte en nuestra plataforma');
-         }
-         if (channel === 'task.assigned') {
-            console.log('Task assigned');
-            // Evento de asignación de tarea
-            const { taskId, userId, message: notificationMessage } = JSON.parse(message);
-            console.log(notificationMessage);
-            await this.sendEmail('alex@gmail.com', 'Se te ha asignado una tarea'); // Enviar el correo de notificación
-         }
+      // Suscriber to the events from Redis
+      this.redisService.subscribeToEvents({
+         'user.register': this.handleUserRegister,
+         'task.assigned': this.handleTaskAssigned,
       });
    }
 
-   async sendEmail(email: string, message: string) {
-      const transporter = nodemailer.createTransport({
-         host: 'smtp.mailtrap.io',
-         port: 587,
-         auth: {
-            user: '0eae631317c030',
-            pass: '2cd4c1af306945',
-         },
-      });
-  
-      await transporter.sendMail({
-         from: '"TaskFlow" <no-reply@taskflow.com>',
-         to: email,
-         subject: 'Bienvenido a TaskFlow',
-         text: message,
-      });
-  
-      console.log(`Correo enviado a ${email}`);
+   // Manejador para el evento de registro de usuario
+   async handleUserRegister(message: string) {
+      const { email } = JSON.parse(message);
+      await this.emailService.sendEmail(email, 'Gracias por registrarte en nuestra plataforma');
+   }
+
+   // Manejador para el evento de tarea asignada
+   async handleTaskAssigned(message: string) {
+      const { userId, taskTitle } = JSON.parse(message);
+
+      const response = await this.consultEmail(userId);
+      const { email } = response.user;
+
+      const messageEmail = `Hola ${email}, se te ha asignado la tarea de ${taskTitle} a ti`;
+
+      await this.emailService.sendEmail(email, messageEmail);
+   }
+
+   // Consultar el correo electrónico desde el microservicio de usuarios
+   async consultEmail(id: string) {
+      return await firstValueFrom(
+         this.authService.send({ cmd: 'users.findById' }, { id }).pipe(
+            catchError((error) => {
+               throw new BadRequestException(error.message || 'Error finding user by id');
+            }),
+         ),
+      );
    }
 }
