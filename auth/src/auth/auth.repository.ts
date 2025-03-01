@@ -35,4 +35,19 @@ export class UserRepository {
          throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);
       }
    }
+
+   /**
+    * 
+    * @returns {Promise<User[]>} The list of users
+    * @description Get all users
+    *
+    */
+   async findAll(select: string[]): Promise<User[]> {
+      try {
+         return this.userModel.find({ active: true }).select(select).exec();
+
+      } catch (error) {
+         throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+   }
 }

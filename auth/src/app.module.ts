@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { envs } from './config/envs';
 import { User, UserSchema } from './auth/schemas/auth.schema';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { User, UserSchema } from './auth/schemas/auth.schema';
     // Configuration MongoDB
     MongooseModule.forRoot(envs.DATABASE_URL, {}),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    UsersModule,
   ],
   controllers: [],
   providers: [],
