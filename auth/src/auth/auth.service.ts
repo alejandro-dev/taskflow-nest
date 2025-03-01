@@ -35,7 +35,7 @@ export class AuthService {
 	 * 	"status": 'error',
 	 * }
 	 */
-	private signToken(payload: { id: string; email: string }): string {
+	private signToken(payload: { id: string; email: string, role: string }): string {
 		return this.jwtService.sign(payload, {
 		  secret: process.env.JWT_SECRET,
 		  expiresIn: '1h', 
@@ -145,7 +145,7 @@ export class AuthService {
 			// Delete the password, active and updatedAt from the user object
 			const { active, password: passUser, createdAt, updatedAt, ...userLogged } = user.toObject();
 
-			return { user: userLogged, token: this.signToken({id: userLogged.id, email: userLogged.email}), status: 'success'};
+			return { user: userLogged, token: this.signToken({id: userLogged.id, email: userLogged.email, role: userLogged.role}), status: 'success'};
 
 		} catch (error) {
 			handleRpcError(error);
@@ -195,8 +195,8 @@ export class AuthService {
 	
 			return { 
 				status: 'success', 
-				token: this.signToken({id: payload.id, email: payload.email}), 
-				user: { id: payload.id, email: 	payload.email } 
+				token: this.signToken({id: payload.id, email: payload.email, role: payload.role}), 
+				user: { id: payload.id, email: payload.email, role: payload.role } 
 			};
 
 		} catch (error) {
