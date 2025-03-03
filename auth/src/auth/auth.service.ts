@@ -187,6 +187,9 @@ export class AuthService {
 			// Check if the user already exists 
 			const user = await this.userRepository.findByEmail(email);
 			if(!user) throw new RpcException({ message: 'Email or password incorrect', status: HttpStatus.BAD_REQUEST });
+
+			// Check is active is true
+			if(!user.active) throw new RpcException({ message: 'The account is not active', status: HttpStatus.UNAUTHORIZED });
 			
 			// Check if the password is correct
 			if(!user.comparePassword(password)) throw new RpcException('Email or password incorrect');
