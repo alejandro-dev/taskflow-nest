@@ -11,7 +11,8 @@ model Task {
   id          String    @id @default(uuid())
   title       String
   description String?
-  assignedTo  String?
+  authorId      String
+  assignedUserId  String?
   dueDate     DateTime?
   status      String    @default("pending")
   priority    String    @default("media")

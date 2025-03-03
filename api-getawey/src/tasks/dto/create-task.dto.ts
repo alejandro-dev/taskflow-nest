@@ -8,9 +8,13 @@ export class CreateTaskDto {
     @IsOptional()
     description?: string;
 
-    @Matches(/^[0-9a-fA-F]{24}$/, { message: 'assignedTo must be a valid MongoDB ObjectId' })
+    @Matches(/^[0-9a-fA-F]{24}$/, { message: 'authorId must be a valid MongoDB ObjectId' })
     @IsOptional()
-    assignedTo?: string;
+    authorId?: string; 
+
+    @Matches(/^[0-9a-fA-F]{24}$/, { message: 'assignedUserId must be a valid MongoDB ObjectId' })
+    @IsOptional()
+    assignedUserId?: string;
 
     @IsDateString()
     @IsOptional()

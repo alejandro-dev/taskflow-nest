@@ -71,14 +71,15 @@ export class TasksService {
             data: {
               title: createTaskDto.title,
               description: createTaskDto.description || null,
-              assignedTo: createTaskDto.assignedTo || null
+              authorId: createTaskDto.authorId,
+              assignedUserId: createTaskDto.assignedUserId || null
             },
          });
 
          // If the task has an assigned user, publish the message to the task.assigned channel
-         if(createTaskDto.assignedTo) {
+         if(createTaskDto.assignedUserId) {
             const notificationData = {
-               userId: createTaskDto.assignedTo,
+               userId: createTaskDto.assignedUserId,
                taskTitle: task.title,
                taskDescription: task.description,
             }
@@ -180,7 +181,7 @@ export class TasksService {
       try {
          const task = await this.prisma.task.findUnique({
             where: {
-               id: id
+               id
             }
          });
 
@@ -190,8 +191,42 @@ export class TasksService {
          return { status: 'success', task };
 
       } catch (error) {
-         console.log('log3');
-         console.log(error);
+         handleRpcError(error);
+      }
+   }
+
+   async findByAuthorId(authorId: string): Promise<Object | any> {
+      try {
+         const task = await this.prisma.task.findMany({
+            where: {
+               authorId
+            }
+         });
+
+         // If the task doesn't exist, throw an error
+         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+
+         return { status: 'success', tasks: task };
+
+      } catch (error) {
+         handleRpcError(error);
+      }
+   }
+
+   async findByAssignedId(assignedUserId: string): Promise<Object | any> {
+      try {
+         const task = await this.prisma.task.findMany({
+            where: {
+               assignedUserId
+            }
+         });
+
+         // If the task doesn't exist, throw an error
+         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+
+         return { status: 'success', tasks: task };
+
+      } catch (error) {
          handleRpcError(error);
       }
    }
@@ -323,7 +358,7 @@ export class TasksService {
          // Delete the task
          await this.prisma.task.delete({
             where: {
-               id: id
+               id
             }
          });
 
@@ -473,13 +508,13 @@ export class TasksService {
                id: assignAuthorDto.id
             },
             data: {
-               assignedTo: assignAuthorDto.assignedTo
+               assignedUserId: assignAuthorDto.assignedUserId
             }
          });
 
          // If the task has an assigned user, publish the message to the task.assigned channel
          const notificationData = {
-            userId: taskUpdated.assignedTo,
+            userId: taskUpdated.assignedUserId,
             taskTitle: taskUpdated.title,
             taskDescription: taskUpdated.description,
          }
@@ -490,7 +525,6 @@ export class TasksService {
          return { status: 'success', task: taskUpdated, message: 'Task author updated successfully' };
 
       } catch (error) {
-         console.log(error);
          handleRpcError(error);
       }
    }

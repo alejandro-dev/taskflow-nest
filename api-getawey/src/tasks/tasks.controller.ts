@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, InternalServerErrorException, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, InternalServerErrorException, Put, UseGuards, Request } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ClientProxy } from '@nestjs/microservices';
@@ -7,6 +7,9 @@ import { catchError, firstValueFrom, Observable } from 'rxjs';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AssignAuthorDto } from './dto/assign-author.dto';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/decorators/roles.decorator';
+import { RolesEnum } from 'src/enums/roles.enum';
 
 @Controller('tasks')
 export class TasksController {
@@ -96,10 +99,14 @@ export class TasksController {
     * }
     * 
     */
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Post()
-   async create(@Body() createTaskDto: CreateTaskDto): Promise<any> {
+   async create(@Request() req: any, @Body() createTaskDto: CreateTaskDto): Promise<any> {
       try {
+         // Assign the author to the task
+         createTaskDto.authorId = req.user.id;
+         
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.create' }, { ...createTaskDto }).pipe(
@@ -110,6 +117,7 @@ export class TasksController {
          );
 
       } catch (error) {
+         console.log(error)
          throw error;
       }
    }
@@ -161,7 +169,8 @@ export class TasksController {
     *    "message": "Internal Server Error"
     * }
     */
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles(RolesEnum.ADMIN)
    @Get()
    async findAll(): Promise<Object> {
       try {
@@ -241,6 +250,45 @@ export class TasksController {
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.findOne' }, { id }).pipe(
+               catchError((error) => {
+                  throw new InternalServerErrorException(error.message || 'Error getting task');
+               })
+            )
+         );
+
+      } catch (error) {
+         throw error;
+      }
+   }
+
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
+   @Get('author/:authorId')
+   async findByAuthorId(@Param('authorId') authorId: string): Promise<Object> {
+      try {
+         console.log('authorId', authorId);
+         // We convert the Observable to a Promise and catch the errors
+         return await firstValueFrom(
+            this.tasksService.send({ cmd: 'tasks.findByAuthorId' }, { authorId }).pipe(
+               catchError((error) => {
+                  throw new InternalServerErrorException(error.message || 'Error getting task');
+               })
+            )
+         );
+
+      } catch (error) {
+         throw error;
+      }
+   }
+
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.USER)
+   @Get('assigned/:assignedId')
+   async findByAssignedId(@Param('assignedId') assignedId: string): Promise<Object> {
+      try {
+         // We convert the Observable to a Promise and catch the errors
+         return await firstValueFrom(
+            this.tasksService.send({ cmd: 'tasks.findByAssignedId' }, { assignedId }).pipe(
                catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error getting task');
                })
@@ -392,7 +440,8 @@ export class TasksController {
     *    "message": "Internal Server Error"
     * }
     */
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Delete(':id')
    async remove(@Param('id') id: string): Promise<Object> {
       try {
@@ -561,11 +610,12 @@ export class TasksController {
     * }
     * 
     */
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Patch(':id/assign-author')
    async assignAuthor(@Param('id') id: string, @Body() assignAuthorDto: AssignAuthorDto): Promise<Object> {
       try {
-         const taskStateUpdated = { id, assignedTo: assignAuthorDto.assignedTo };
+         const taskStateUpdated = { id, assignedTo: assignAuthorDto.assignedUserId };
 
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(

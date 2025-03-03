@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -10,10 +10,6 @@ import { TasksCacheService } from './tasks-cache.service';
 @Controller('tasks')
 export class TasksController {
    constructor(private readonly tasksService: TasksService, private readonly tasksCacheService: TasksCacheService) {}
-
-   onModuleInit() {
-      console.log('🟢  Microservicio TaskService iniciado y escuchando eventos');
-   }
 
    /**
     * 
@@ -92,6 +88,7 @@ export class TasksController {
          return  this.tasksService.create(createTaskDto);
 
       } catch (error) {
+         console.log(error);
          return error;
       }
    }
@@ -179,10 +176,20 @@ export class TasksController {
     * }
     * 
     */
-   @MessagePattern({ cmd: 'tasks.findOne' })
-   findOne(@Payload('id') id: string): Object {
+   @MessagePattern({ cmd: 'tasks.findByAuthorId' })
+   findByAuthorId(@Payload('authorId') authorId: string): Object {
       try {
-         return this.tasksService.findOne(id);
+         return this.tasksService.findByAuthorId(authorId);
+
+      } catch (error) {
+         return error;
+      }
+   }
+
+   @MessagePattern({ cmd: 'tasks.findByAssignedId' })
+   findByAssignedId(@Payload('assignedId') assignedId: string): Object {
+      try {
+         return this.tasksService.findByAssignedId(assignedId);
 
       } catch (error) {
          return error;

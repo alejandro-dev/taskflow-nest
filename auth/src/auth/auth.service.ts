@@ -197,7 +197,7 @@ export class AuthService {
 			// Delete the password, active and updatedAt from the user object
 			const { active, password: passUser, createdAt, updatedAt, ...userLogged } = user.toObject();
 
-			return { user: userLogged, token: this.signToken({id: userLogged.id, email: userLogged.email, role: userLogged.role}), status: 'success'};
+			return { user: userLogged, token: this.signToken({id: userLogged._id, email: userLogged.email, role: userLogged.role}), status: 'success'};
 
 		} catch (error) {
 			handleRpcError(error);
