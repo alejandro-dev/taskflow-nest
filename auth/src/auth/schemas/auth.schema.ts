@@ -16,8 +16,11 @@ export class User extends Document {
   @Prop({ type: String, enum: RolesEnum, default: RolesEnum.USER })
   role: RolesEnum;
 
-  @Prop({ default: true })
+  @Prop({ default: false })
   active: boolean;
+
+  @Prop()
+  token: string;
 
   comparePassword: (plainPassword: string) => Promise<boolean>;
 

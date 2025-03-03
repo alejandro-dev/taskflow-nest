@@ -81,6 +81,46 @@ export class AuthController {
     }
 
     /**
+     * 
+     * @messagePattern auth.verify-account 
+     * @description Verify the account
+     * @param token - The token to verify
+     * @returns {Promise<any>} The response contain the operation status and the user
+     * @example
+     * // Example success response
+     * statusCode: 200  
+     * {    
+     *     "status": "success",
+     * 	   "message": "Account verified"
+     * }
+     * 
+     * @example
+     * // User already active response
+     * statusCode: 404  
+     * {
+     *     "message": "User already active",
+     * 	   "status": "fail",
+     *  }
+     * 
+     * @example
+     * // Internal Server Error response
+     * statusCode: 500  
+     * {
+     *     "message": "Internal Server Error",
+     *     "status": 'error',   
+     * }
+     */
+    @MessagePattern({ cmd: 'auth.verify-account' })
+    verifyAccount(@Payload("token") token: string): Promise<any> {
+        try {
+            return this.authService.verifyAccount(token);
+            
+        } catch (error) {
+            return error;
+        }
+    }
+
+    /**
      * @messagePattern auth.login
      * 
      * @param loginUserDto - The user data to login a user

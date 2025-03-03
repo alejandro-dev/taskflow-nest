@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style>
+
+        .btn {
+            color: #fff!important;
+            vertical-align: middle;
+            background-color: #4e0171;
+            border: 1px solid transparent;
+            padding: .65rem 1rem;
+            width: 85% !important;
+            text-align: center;
+            line-height: 1.5;
+            border-radius: .42rem;
+            margin-top: 25px;
+            margin-bottom: 25px !important;
+            text-decoration: none;
+            margin-left: 30px !important;
+            margin-right: 30px !important;
+        }
+
+        div{
+            position: relative;
+            margin-left: 5%;
+            margin-right: 5%;
+            margin-top: 3%;
+        }
+
+        .ii a[href]{
+            color: #4e0171 !important;
+        }
+
+        .formbg {
+            z-index: 1;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #000;
+            width: 100%;
+            height: 100%;
+            opacity: 0.5;
+            transition: all 0.5s ease-out;
+            margin: 0px
+        }
+
+        @media (max-width: 480px) {
+            .title-email{
+                font-size: 40px !important;
+            }
+
+            .table2, .table3{
+                width: 100% !important;
+                padding-left: 0px !important;
+                padding-right: 0px !important;
+            }
+
+            .cabecera-email{
+                height: 1090px ​!important;
+            }
+
+            .logo-white{
+                margin-top: -510px !important;
+            }
+        }
+
+        .btn-confirm{
+            margin-bottom: 50px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: fit-content;
+        }
+
+        .violet{
+            color: #4e0171 !important;
+        }
+        
+    </style>
+</head>
+<body bgcolor="#EEF0F8" style="margin:0 !important; padding:0 !important; font-family:Arial, sans-serif; font-size:15px; color:#23496d; word-break:break-word; background-color: #EEF0F8;">
+    <table height="100%" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tbody>    
+            <tr>
+                <td valign="top" align="left">
+                    <div style="min-width:280px; max-width:600px; width:100%; Margin-left:auto; Margin-right:auto; border-collapse:collapse; border-spacing:0; background-color:#fff; margin-bottom: 3%;">
+                        <table style="position:relative;z-index:9999;padding-left: 5%;padding-right: 5%;margin-top: 3%;" class="wrapper table1" width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td class="cabecera-email" align="left">
+                                    <p style="color: #3F4254;text-decoration:none !important;"> Hola, {{email}}. Bienvendido a Taskflow.</p>
+                                    <p style="color: #3F4254;"> Te damos la bienvenida a la comunidad de Taskflow. Primero, necesitas confirmar tu cuenta. </p>
+                                    <p style="color: #3F4254;"> Simplemente presiona el botón.</p>
+                                    <a style="font-size: 15px;" href="{{url}}">
+                                        <span style="font-size: 15px;">Confirmar email</span>
+                                    </a>  
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="box-sizing: border-box;">
+                                    <table class="footer" align="center" cellpadding="0" cellspacing="0" style="box-sizing: border-box; margin: 0 auto; text-align: center; width: 100%; -premailer-cellpadding: 0; -premailer-cellspacing: 0; -premailer-width: 570px;">
+                                        <tr>
+                                            <td class="content-cell" align="left" style="box-sizing: border-box; padding-top: 5px;">
+                                                <p style="color: #3F4254;">Si no funciona, copia y pega el siguiente enlace en tu navegador: </p>   
+                                                <p class="violet"> {{url}} </p>      
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="content-cell" align="left" style="box-sizing: border-box; padding-top: 5px;">
+                                                <p style="color: #3F4254;">Si tienes cualquier duda, responde a este email, estaremos siempre encantados de ayudarte:</p>    
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="content-cell" align="left" style="box-sizing: border-box;">
+                                                <p style="color: #3F4254;">Recibe un cordial saludo,</p>    
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="content-cell" align="left" style="box-sizing: border-box;">
+                                                <p style="color: #3F4254;">El equipo Taskflow.</p>    
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>   
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>  
+        </tbody>    
+    </table>
+</body>
+</html> 

@@ -4,11 +4,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { envs } from 'src/config/envs';
 import { QueuesEnum } from 'src/enums/queues.enum';
 import { Services } from 'src/enums/services.enum';
+import { EmailService } from './email.service';
+import { RedisService } from './redis.service';
 
 @Module({
-  controllers: [],
-  providers: [NotificationsService],
-  imports: [
+   controllers: [],
+   providers: [NotificationsService, EmailService, RedisService],
+   imports: [
       // Connect to RMQ with auth service
       ClientsModule.register([
          { 
@@ -24,6 +26,7 @@ import { Services } from 'src/enums/services.enum';
          }   
          },
       ])
-  ]
+   ],
+   exports: [NotificationsService, EmailService, RedisService],
 })
 export class NotificationsModule {}

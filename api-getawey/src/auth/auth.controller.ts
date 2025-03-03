@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Inject, HttpException, HttpStatus, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, HttpException, HttpStatus, BadRequestException, InternalServerErrorException, Param } from '@nestjs/common';
 import { Services } from 'src/enums/services.enum';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -161,5 +161,26 @@ export class AuthController {
 		} catch (error) {
 			throw error;
 		}
+	}
+
+	@Get('verify-account/:token')
+	async verifyAccount(@Param('token') token: string): Promise<any> {
+		try {
+			// Check if token is valid
+			if(!token || token === 'undefined') throw new HttpException({ status: "fail", message: "Token is invalid" }, HttpStatus.BAD_REQUEST);
+			
+			// We convert the Observable to a Promise and catch the errors
+			return await firstValueFrom(
+				this.authService.send({ cmd: 'auth.verify-account' }, { token }).pipe(
+					catchError((error) => {
+						console.log(error);
+						throw new InternalServerErrorException(error.message || 'Error verifying account');
+					})
+				)
+			);
+   
+		 } catch (error) {
+			throw error;
+		 }
 	}
 }

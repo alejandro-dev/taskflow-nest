@@ -47,9 +47,9 @@ export class UserRepository {
     * @returns {Promise<User>} The created user
     * 
     */
-   async createUser(email: string, password: string): Promise<User> {
+   async createUser(email: string, password: string, token: string): Promise<User> {
       try {
-         const newUser = new this.userModel({ email, password });
+         const newUser = new this.userModel({ email, password, token });
          return newUser.save();
 
       } catch (error) {
@@ -68,6 +68,33 @@ export class UserRepository {
          return this.userModel.find({ active: true }).select(select).exec();
 
       } catch (error) {
+         throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+   }
+
+   /**
+    * 
+    * @param token - The token of the user
+    * @description Find a user by token
+    * @returns {Promise<User | null>} The user found or null if not found
+    */
+   async findByTokenNotActive(token: string): Promise<User | null> {
+      try {
+         // Get user by token and check if the user is active
+         return this.userModel.findOne({ token, active: false }).exec();
+
+      } catch (error) {
+         throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+   }
+
+   async activeUser(id: string): Promise<User | null> {
+      try {
+         // Updated the user that active is false and active to true and unset the token
+         return this.userModel.findByIdAndUpdate(id, { active: true, $unset: { token: "" } }).exec();
+
+      } catch (error) {
+         console.log(error);
          throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);
       }
    }

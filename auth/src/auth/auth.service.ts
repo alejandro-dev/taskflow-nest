@@ -1,4 +1,5 @@
 import { HttpStatus, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { RpcException } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from './auth.repository';
@@ -73,7 +74,7 @@ export class AuthService {
 	 * 	"status": 'error',
 	 * }
 	 */
-	async create(createUserDto: CreateUserDto) {
+	async create(createUserDto: CreateUserDto): Promise<Object | any> {
 		try {
 			// Get the email and password from the dto
 			const { password, email } = createUserDto;
@@ -82,14 +83,62 @@ export class AuthService {
 			const user = await this.userRepository.findByEmail(email);
 			if(user) throw new RpcException({ message: 'User already exists', status: HttpStatus.BAD_REQUEST });
 
-			// Create the user
-			await this.userRepository.createUser(email, password);
+			// We generate a random token for the user registration
+			const token = crypto.randomBytes(20).toString('hex');
 
-			await this.redis.publish('user.register', JSON.stringify({ email }));
-			this.redis.quit();
+			// Create the user
+			await this.userRepository.createUser(email, password, token);
+
+			await this.redis.publish('user.register', JSON.stringify({ email, token }));
+			//this.redis.quit();
 			
 			return { status: 'success', message: 'Create user' };
 		
+		} catch (error) {
+			handleRpcError(error);
+		}
+	}
+
+	/**
+     * 
+     * @description Verify the account
+     * @param token - The token to verify
+     * @returns {Promise<any>} The response contain the operation status and the user
+     * @example
+     * // Example success response
+     * statusCode: 200  
+     * {    
+     *     "status": "success",
+     * 	   "message": "Account verified"
+     * }
+     * 
+     * @example
+     * // User already active response
+     * statusCode: 404  
+     * {
+     *     "message": "User already active",
+     * 	   "status": "fail",
+     *  }
+     * 
+     * @example
+     * // Internal Server Error response
+     * statusCode: 500  
+     * {
+     *     "message": "Internal Server Error",
+     *     "status": 'error',   
+     * }
+     */
+	async verifyAccount(token: string): Promise<Object | any> {
+		try {
+			// Find de user by token and check if the user is active
+			const user = await this.userRepository.findByTokenNotActive(token);
+			if(!user) throw new RpcException({ message: 'User already active', status: HttpStatus.NOT_FOUND });
+
+			// Update the user active to true
+			await this.userRepository.activeUser(user._id as string);
+
+			return { status: 'success', message: 'Account verified' };
+
 		} catch (error) {
 			handleRpcError(error);
 		}

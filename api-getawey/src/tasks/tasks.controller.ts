@@ -1,15 +1,12 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, InternalServerErrorException, Put, UseGuards } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { ClientProxy } from '@nestjs/microservices';
 import { Services } from 'src/enums/services.enum';
 import { catchError, firstValueFrom, Observable } from 'rxjs';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AssignAuthorDto } from './dto/assign-author.dto';
-import { RolesGuard } from 'src/guards/roles.guard';
-import { RolesEnum } from 'src/enums/roles.enum';
-import { Roles } from 'src/decorators/roles.decorator';
 
 @Controller('tasks')
 export class TasksController {

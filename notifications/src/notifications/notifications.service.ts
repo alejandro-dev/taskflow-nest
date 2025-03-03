@@ -4,6 +4,7 @@ import { RedisService } from './redis.service'; // RedisService extraído
 import { EmailService } from './email.service'; // EmailService extraído
 import { catchError, firstValueFrom } from 'rxjs';
 import { Services } from 'src/enums/services.enum';
+import { url } from 'inspector';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
@@ -15,16 +16,27 @@ export class NotificationsService implements OnModuleInit {
 
    onModuleInit() {
       // Suscriber to the events from Redis
+      // Put the function bind(this) to make sure that the context is correct
       this.redisService.subscribeToEvents({
-         'user.register': this.handleUserRegister,
+         'user.register': this.handleUserRegister.bind(this),
          'task.assigned': this.handleTaskAssigned,
       });
    }
 
    // Manejador para el evento de registro de usuario
    async handleUserRegister(message: string) {
-      const { email } = JSON.parse(message);
-      await this.emailService.sendEmail(email, 'Gracias por registrarte en nuestra plataforma');
+      try {
+         const { email, token } = JSON.parse(message);
+         await this.emailService.sendEmail(
+            'no-reply@taskflow.com',
+            'Taskflow - Bienvenido a la plataforma de TaskFlow',
+            { email, url: `http://localhost:3000/auth/verify-account/${token}` },
+            'verify-account.html'
+         );
+
+      } catch (error) {
+         console.log('Error al enviar el correo:', error);
+      }
    }
 
    // Manejador para el evento de tarea asignada
@@ -36,7 +48,14 @@ export class NotificationsService implements OnModuleInit {
 
       const messageEmail = `Hola ${email}, se te ha asignado la tarea de ${taskTitle} a ti`;
 
-      await this.emailService.sendEmail(email, messageEmail);
+      await this.emailService.sendEmail(
+         'no-reply@taskflow.com',
+         `Taskflow - Bienvenido a la plataforma de TaskFlow`,
+         {email},
+         'verify-account.html'
+     );
+
+      //await this.emailService.sendEmail(email, messageEmail);
    }
 
    // Consultar el correo electrónico desde el microservicio de usuarios
