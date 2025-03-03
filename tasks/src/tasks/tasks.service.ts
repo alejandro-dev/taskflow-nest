@@ -78,18 +78,18 @@ export class TasksService {
          // If the task has an assigned user, publish the message to the task.assigned channel
          if(createTaskDto.assignedTo) {
             const notificationData = {
-               message: 'Task created successfully',
-               taskId: task.id,
-               userId: createTaskDto.assignedTo
+               userId: createTaskDto.assignedTo,
+               taskTitle: task.title,
+               taskDescription: task.description,
             }
             await this.redis.publish('task.assigned', JSON.stringify(notificationData));
-            this.redis.quit();
          }
          
 
          return { status: 'success', task, message: 'Task created successfully' };
 
       } catch (error) {
+         console.log(error);
          handleRpcError(error);
       }
    } 
@@ -479,9 +479,9 @@ export class TasksService {
 
          // If the task has an assigned user, publish the message to the task.assigned channel
          const notificationData = {
-            message: 'Task updated successfully',
-            taskTitle: task.title,
-            userId: taskUpdated.assignedTo
+            userId: taskUpdated.assignedTo,
+            taskTitle: taskUpdated.title,
+            taskDescription: taskUpdated.description,
          }
 
          await this.redis.publish('task.assigned', JSON.stringify(notificationData));

@@ -19,14 +19,17 @@ export class NotificationsService implements OnModuleInit {
       // Put the function bind(this) to make sure that the context is correct
       this.redisService.subscribeToEvents({
          'user.register': this.handleUserRegister.bind(this),
-         'task.assigned': this.handleTaskAssigned,
+         'task.assigned': this.handleTaskAssigned.bind(this),
       });
    }
 
-   // Manejador para el evento de registro de usuario
+   // Handle to the event of user register
    async handleUserRegister(message: string) {
       try {
+         // Parse the message
          const { email, token } = JSON.parse(message);
+         
+         // Send email
          await this.emailService.sendEmail(
             'no-reply@taskflow.com',
             'Taskflow - Bienvenido a la plataforma de TaskFlow',
@@ -39,26 +42,26 @@ export class NotificationsService implements OnModuleInit {
       }
    }
 
-   // Manejador para el evento de tarea asignada
+   // Handle to the event of task assigned
    async handleTaskAssigned(message: string) {
-      const { userId, taskTitle } = JSON.parse(message);
+      // Parse the message
+      const { userId, taskTitle, taskDescription } = JSON.parse(message);
+      console.log(message)
 
+      // Find the user by id
       const response = await this.consultEmail(userId);
       const { email } = response.user;
 
-      const messageEmail = `Hola ${email}, se te ha asignado la tarea de ${taskTitle} a ti`;
-
+      // Send email
       await this.emailService.sendEmail(
          'no-reply@taskflow.com',
-         `Taskflow - Bienvenido a la plataforma de TaskFlow`,
-         {email},
-         'verify-account.html'
-     );
-
-      //await this.emailService.sendEmail(email, messageEmail);
+         'Taskflow - Nueva tarea asignada',
+         { email, taskTitle, taskDescription },
+         'assign-auth-task.html'
+      );
    }
 
-   // Consultar el correo electrónico desde el microservicio de usuarios
+   // Find the email from the user id
    async consultEmail(id: string) {
       return await firstValueFrom(
          this.authService.send({ cmd: 'users.findById' }, { id }).pipe(
