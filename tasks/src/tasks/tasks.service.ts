@@ -1,12 +1,12 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import Redis from 'ioredis';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from 'prisma/prisma.service';
-import { RpcException } from '@nestjs/microservices';
-import { handleRpcError } from './filters/error-handler.filter';
-import Redis from 'ioredis';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AssignAuthorDto } from './dto/assign-author.dto';
+import { handleRpcError } from './filters/error-handler.filter';
 
 @Injectable()
 export class TasksService {

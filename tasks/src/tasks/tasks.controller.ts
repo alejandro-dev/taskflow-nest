@@ -5,10 +5,11 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AssignAuthorDto } from './dto/assign-author.dto';
+import { TasksCacheService } from './tasks-cache.service';
 
 @Controller('tasks')
 export class TasksController {
-   constructor(private readonly tasksService: TasksService) {}
+   constructor(private readonly tasksService: TasksService, private readonly tasksCacheService: TasksCacheService) {}
 
    onModuleInit() {
       console.log('🟢  Microservicio TaskService iniciado y escuchando eventos');
@@ -135,7 +136,8 @@ export class TasksController {
    @MessagePattern({ cmd: 'tasks.findAll' })
    findAll(): Object {
       try {
-         return this.tasksService.findAll();
+         // Check the tasks in Redis, if not found, query the DB
+         return this.tasksCacheService.getTasksForUser();
 
       } catch (error) {
          return error;
