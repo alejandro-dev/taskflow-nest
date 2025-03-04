@@ -35,7 +35,7 @@ export class AuthGuard implements CanActivate {
 			request['token'] = renewToken;
 			request['user'] = user;
 			
-			return renewToken;
+			return true;
 		
 		} catch(error) {
 			// If the token is invalid, throw an error

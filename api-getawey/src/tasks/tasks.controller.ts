@@ -11,6 +11,7 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { RolesEnum } from 'src/enums/roles.enum';
 import { UserTasksGuard } from 'src/guards/user-tasks.guard';
+import { AuthorTasksGuard } from 'src/guards/author-tasks.guards';
 
 @Controller('tasks')
 export class TasksController {
@@ -323,7 +324,7 @@ export class TasksController {
     *    "message": "Internal Server Error"
     * }
     */
-   @UseGuards(AuthGuard, RolesGuard)
+   @UseGuards(AuthGuard, RolesGuard, AuthorTasksGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Get('author/:id')
    async findByAuthorId(@Param('id') authorId: string): Promise<Object> {
