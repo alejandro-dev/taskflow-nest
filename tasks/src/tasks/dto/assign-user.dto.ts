@@ -1,6 +1,6 @@
 import { IsString, Matches } from "class-validator";
 
-export class AssignAuthorDto {
+export class AssignUserDto {
    @IsString()
    id: string;
 

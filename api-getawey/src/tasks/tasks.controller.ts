@@ -6,12 +6,10 @@ import { Services } from 'src/enums/services.enum';
 import { catchError, firstValueFrom, Observable } from 'rxjs';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { ChangeStatusDto } from './dto/change-status.dto';
-import { AssignAuthorDto } from './dto/assign-author.dto';
+import { AssignUserDto } from './dto/assign-user.dto';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { RolesEnum } from 'src/enums/roles.enum';
-import { UserTasksGuard } from 'src/guards/user-tasks.guard';
-import { AuthorTasksGuard } from 'src/guards/author-tasks.guards';
 import { TaskAccessGuard } from 'src/guards/task-access.guard';
 
 @Controller('tasks')
@@ -326,7 +324,7 @@ export class TasksController {
     *    "message": "Internal Server Error"
     * }
     */
-   @UseGuards(AuthGuard, RolesGuard, AuthorTasksGuard)
+   @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Get('author/:id')
    async findByAuthorId(@Param('id') authorId: string): Promise<Object> {
@@ -407,7 +405,7 @@ export class TasksController {
     * }
     * 
     */
-   @UseGuards(AuthGuard, RolesGuard, UserTasksGuard)
+   @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
    @Get('assigned/:id')
    async findByAssignedId(@Param('id') assignedId: string): Promise<Object> {
       try {
@@ -501,7 +499,7 @@ export class TasksController {
     *    "message": "Internal Server Error"  
     * }
     */
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard, TaskAccessGuard)
    @Put(':id')
    async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto): Promise<Object> {
       try {
@@ -521,51 +519,46 @@ export class TasksController {
    }
 
    /**
-    * 
     * @route DELETE /tasks/:id
-    * 
     * @description Delete a task by id
-    * @param id {string} The id of the task
-    * @returns {Promise<Object>} The response contain the operation status and the message
     * 
-    * @response 200 {object} message - The message
-    * @response 401 {string} message - "Unauthorized"
-    * @response 404 {string} message - "Not Found"
-    * @response 500 {string} message - "Internal Server Error"
-    *
+    * @param {string} id - The ID of the task
+    * @returns {Promise<Object>} The response containing the operation status and message
+    * 
+    * @response 200 {Object} Success - The task was deleted
+    * @response 401 {Object} Unauthorized - User is not authorized
+    * @response 404 {Object} Not Found - Task not found
+    * @response 500 {Object} Server Error - Internal server error
+    * 
     * @example
     * // Example success response
-    * statusCode: 200 
     * {
-    *    "status": "success",
-    *    "message": "The task #1234567890abcdef12345678 has been deleted"
+    *   "status": "success",
+    *   "message": "The task #1234567890abcdef12345678 has been deleted"
     * }
     * 
     * @example 
     * // Unauthorized response   
-    * statusCode: 401
     * {
-    *    "statusCode": 401,
-    *    "message": "Unauthorized",
+    *   "statusCode": 401,
+    *   "message": "Unauthorized"
     * }
     * 
     * @example 
     * // Not Found response   
-    * statusCode: 404
     * {
-    *    "status": "fail",
-    *    "message": "Task not found"
+    *   "status": "fail",
+    *   "message": "Task not found"
     * }
     * 
     * @example
     * // Internal Server Error response
-    * statusCode: 500
     * {
-    *    "status": "error",
-    *    "message": "Internal Server Error"
+    *   "status": "error",
+    *   "message": "Internal Server Error"
     * }
     */
-   @UseGuards(AuthGuard, RolesGuard)
+   @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Delete(':id')
    async remove(@Param('id') id: string): Promise<Object> {
@@ -587,10 +580,11 @@ export class TasksController {
 
    /**
     * 
+    * @route PATCH /tasks/:id/change-status
     * @returns {Promise<Object>} The response contain the operation status and the updated task
-    * @param id - The id of the task
-    * @param changeStatusDto - The task data to change the status of a task
-    * @param changeStatusDto.status - The status of the task. It can be 'pending', 'in_progress' or 'done'
+    * @param {string} id - The id of the task
+    * @param {ChangeStatusDto} changeStatusDto - The task data to change the status of a task
+    * @param {string} changeStatusDto.status - The status of the task. It can be 'pending', 'in_progress' or 'done'
     * 
     * @response 200 {object} task - The updated task
     * @response 400 {string} message - "Bad Request"
@@ -649,7 +643,7 @@ export class TasksController {
     *    "message": "Internal Server Error"        
     * }
     */
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard, TaskAccessGuard)
    @Patch(':id/change-status')
    async changeStatus(@Param('id') id: string, @Body() changeStatusDto: ChangeStatusDto): Promise<Object> {
       try {
@@ -671,9 +665,10 @@ export class TasksController {
 
    /**
     * 
+    * @route PATCH /tasks/:id/assign-user
     * @param id - The id of the task
-    * @param assignAuthorDto - The task data to assign the author of a task
-    * @param assignAuthorDto.assignedTo - The id of the user assigned to the task
+    * @param {AssignUserDto} assignUserDto - The task data to assign the author of a task
+    * @param {string} assignAuthorDto.assignedTo - The id of the user assigned to the task
     * 
     * @returns {Promise<Object>} The response contain the operation status and the updated task
     * 
@@ -735,12 +730,12 @@ export class TasksController {
     * }
     * 
     */
-   @UseGuards(AuthGuard, RolesGuard)
+   @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
-   @Patch(':id/assign-author')
-   async assignAuthor(@Param('id') id: string, @Body() assignAuthorDto: AssignAuthorDto): Promise<Object> {
+   @Patch(':id/assign-user')
+   async assignAuthor(@Param('id') id: string, @Body() assignUserDto: AssignUserDto): Promise<Object> {
       try {
-         const taskStateUpdated = { id, assignedTo: assignAuthorDto.assignedUserId };
+         const taskStateUpdated = { id, assignedTo: assignUserDto.assignedUserId };
 
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(

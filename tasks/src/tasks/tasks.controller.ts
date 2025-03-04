@@ -4,7 +4,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ChangeStatusDto } from './dto/change-status.dto';
-import { AssignAuthorDto } from './dto/assign-author.dto';
+import { AssignUserDto } from './dto/assign-user.dto';
 import { TasksCacheService } from './tasks-cache.service';
 
 @Controller('tasks')
@@ -436,10 +436,10 @@ export class TasksController {
     *    "message": "Internal Server Error"
     * }
     */
-   @MessagePattern({ cmd: 'tasks.assign-author' })
-   assignAuthor(@Payload() assignAuthorDto: AssignAuthorDto): Object {
+   @MessagePattern({ cmd: 'tasks.assign-user' })
+   assignAuthor(@Payload() assignUserDto: AssignUserDto): Object {
       try {
-         return this.tasksService.assignAuthor(assignAuthorDto);
+         return this.tasksService.assignUser(assignUserDto);
 
       } catch (error) {
          return error;

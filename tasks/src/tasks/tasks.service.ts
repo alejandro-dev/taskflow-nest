@@ -5,7 +5,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { ChangeStatusDto } from './dto/change-status.dto';
-import { AssignAuthorDto } from './dto/assign-author.dto';
+import { AssignUserDto } from './dto/assign-user.dto';
 import { handleRpcError } from './filters/error-handler.filter';
 
 @Injectable()
@@ -490,12 +490,12 @@ export class TasksService {
     *    "message": "Internal Server Error"
     * }
     */
-   async assignAuthor(assignAuthorDto: AssignAuthorDto): Promise<Object | any> {
+   async assignUser(assignUserrDto: AssignUserDto): Promise<Object | any> {
       try {
          // Check if the task exists
          const task = await this.prisma.task.findUnique({
             where: {
-               id: assignAuthorDto.id
+               id: assignUserrDto.id
             }
          });
 
@@ -505,10 +505,10 @@ export class TasksService {
          // Update the task
          const taskUpdated = await this.prisma.task.update({
             where: {
-               id: assignAuthorDto.id
+               id: assignUserrDto.id
             },
             data: {
-               assignedUserId: assignAuthorDto.assignedUserId
+               assignedUserId: assignUserrDto.assignedUserId
             }
          });
 
