@@ -10,6 +10,7 @@ import { AssignAuthorDto } from './dto/assign-author.dto';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { RolesEnum } from 'src/enums/roles.enum';
+import { UserTasksGuard } from 'src/guards/user-tasks.guard';
 
 @Controller('tasks')
 export class TasksController {
@@ -261,10 +262,71 @@ export class TasksController {
       }
    }
 
+   /**
+    * 
+    * @route GET /author/:authorId
+    * @description Get a task by author id
+    * @param {string} authorId - Author id
+    * @returns {Promise<Object>} - Task
+    * 
+    * @useGuards AuthGuard, RolesGuard
+    * @roles ADMIN, MANAGER
+    * 
+    * @example
+    * // Success
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *    }
+    * }
+    * 
+    * @example
+    * // Unauthorized response
+    * statusCode: 401
+    * {
+    *    "statusCode": 401,
+    *    "error": "Unauthorized",
+    *    "message": "Token expired"
+    * }
+    * 
+    * @example
+    * // Forbidden
+    * statusCode: 403
+    * {
+    *    "status": "fail",
+    *    "message": "You don't have permission to access this task"
+    * }
+    * 
+    * @example
+    * // Not Found response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    */
    @UseGuards(AuthGuard, RolesGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
-   @Get('author/:authorId')
-   async findByAuthorId(@Param('authorId') authorId: string): Promise<Object> {
+   @Get('author/:id')
+   async findByAuthorId(@Param('id') authorId: string): Promise<Object> {
       try {
          console.log('authorId', authorId);
          // We convert the Observable to a Promise and catch the errors
@@ -281,10 +343,70 @@ export class TasksController {
       }
    }
 
-   @UseGuards(AuthGuard, RolesGuard)
-   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER, RolesEnum.USER)
-   @Get('assigned/:assignedId')
-   async findByAssignedId(@Param('assignedId') assignedId: string): Promise<Object> {
+   /**
+    * 
+    * @route GET /author/:authorId
+    * @description Get a task by author id
+    * @param {string} assignedId - Author id
+    * @returns {Promise<Object>} - Task
+    * 
+    * @useGuards AuthGuard, RolesGuard, UserTasksGuard
+    * 
+    * @example
+    * // Success
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *    }
+    * }
+    * 
+    * @example
+    * // Unauthorized response
+    * statusCode: 401
+    * {
+    *    "statusCode": 401,
+    *    "error": "Unauthorized",
+    *    "message": "Token expired"
+    * }
+    * 
+    * @example
+    * // Forbidden
+    * statusCode: 403
+    * {
+    *    "status": "fail",
+    *    "message": "You don't have permission to access this task"
+    * }
+    * 
+    * @example
+    * // Not Found response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }
+    * 
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    * 
+    */
+   @UseGuards(AuthGuard, RolesGuard, UserTasksGuard)
+   @Get('assigned/:id')
+   async findByAssignedId(@Param('id') assignedId: string): Promise<Object> {
       try {
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(

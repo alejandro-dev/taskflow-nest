@@ -38,7 +38,6 @@ export class AuthGuard implements CanActivate {
 			return renewToken;
 		
 		} catch(error) {
-			console.log(error);
 			// If the token is invalid, throw an error
 			throw new HttpException({ status: "fail", message: "Unauthorized" }, HttpStatus.UNAUTHORIZED);
 		}      
