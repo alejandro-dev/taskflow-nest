@@ -176,6 +176,51 @@ export class TasksController {
     * }
     * 
     */
+   @MessagePattern({ cmd: 'tasks.findOne' })
+   findOne(@Payload('id') id: string): Object {
+      try {
+         return this.tasksService.findOne(id);
+
+      } catch (error) {
+         return error;
+      }
+   }
+
+   /**
+    * 
+    * @returns {Object} The response contain the operation status and the task
+    * 
+    * @messagePattern tasks.findByAuthorId
+    * @description Get a task by id
+    * @param id - The id of the task
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *    }
+    * }
+    *   
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    * 
+    */
    @MessagePattern({ cmd: 'tasks.findByAuthorId' })
    findByAuthorId(@Payload('authorId') authorId: string): Object {
       try {

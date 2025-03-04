@@ -12,6 +12,7 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { RolesEnum } from 'src/enums/roles.enum';
 import { UserTasksGuard } from 'src/guards/user-tasks.guard';
 import { AuthorTasksGuard } from 'src/guards/author-tasks.guards';
+import { TaskAccessGuard } from 'src/guards/task-access.guard';
 
 @Controller('tasks')
 export class TasksController {
@@ -245,10 +246,11 @@ export class TasksController {
     *    "message": "Internal Server Error"
     * }
     */
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard, TaskAccessGuard)
    @Get(':id')
    async findOne(@Param('id') id: string): Promise<Object> {
       try {
+         console.log('entro');
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.findOne' }, { id }).pipe(
