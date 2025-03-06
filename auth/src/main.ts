@@ -39,7 +39,7 @@ async function bootstrap() {
             return new BadRequestException({
                status: 'fail',
                message: "Your request is invalid",
-         details: formattedErrors,
+               details: formattedErrors,
             });
          },
       }),

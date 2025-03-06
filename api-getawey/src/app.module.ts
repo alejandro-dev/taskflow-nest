@@ -14,7 +14,6 @@ import { UsersModule } from './users/users.module';
     }),
 
     TasksModule,
-
     UsersModule
   ]
 })

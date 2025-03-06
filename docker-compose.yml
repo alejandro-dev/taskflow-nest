@@ -54,6 +54,20 @@ services:
     networks:
       - app-network
 
+  logs:
+    build: ./logs
+    restart: always
+    depends_on:
+      - logs-db
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./logs:/app
+    env_file:
+      - ./logs/.env 
+    networks:
+      - app-network
+
   auth-db:
     image: mongo:latest
     container_name: auth-db
@@ -67,6 +81,20 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
       - ./auth-db:/data/db
+
+  logs-db:
+    image: mongo:latest
+    container_name: logs-db
+    restart: always
+    ports:
+      - "27019:27017"
+    networks:
+      - app-network
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./logs-db:/data/db
 
   tasks-db:
     image: postgres:latest

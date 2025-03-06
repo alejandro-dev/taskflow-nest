@@ -1,11 +1,11 @@
 import { Controller } from '@nestjs/common';
 import { TasksService } from './tasks.service';
-import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AssignUserDto } from './dto/assign-user.dto';
 import { TasksCacheService } from './tasks-cache.service';
+import { CreateTaskRequestDto } from './dto/create-task-request.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -31,14 +31,16 @@ export class TasksController {
    /**
     * 
     * @messagePattern tasks.create
-    * @description Create a new task
-    * @param createTaskDto - The task data to create a new task 
-    * @param createTaskDto.title - The title of the task
-    * @param createTaskDto.description - The description of the task
-    * @param createTaskDto.assignedTo - The id of the user assigned to the task
-    * @param createTaskDto.dueDate - The due date of the task
-    * @param createTaskDto.status - The status of the task
-    * @param createTaskDto.priority - The priority of the task
+    * @description Create a new task+
+    * @param createTaskRequestDto - The task data to create a new task with the request id
+    * @param createTaskRequestDto.requestId - The request id
+    * @param createTaskRequestDto.createTaskDto - The task data to create a new task 
+    * @param createTaskRequestDto.createTaskDto.title - The title of the task
+    * @param createTaskRequestDto.createTaskDto.description - The description of the task
+    * @param createTaskRequestDto.createTaskDto.assignedTo - The id of the user assigned to the task
+    * @param createTaskRequestDto.createTaskDto.dueDate - The due date of the task
+    * @param createTaskRequestDto.createTaskDto.status - The status of the task
+    * @param createTaskRequestDto.createTaskDto.priority - The priority of the task
     * 
     * @returns {Object} The response contain the operation status and the created task
     * 
@@ -83,9 +85,9 @@ export class TasksController {
     * 
     */
    @MessagePattern({ cmd: 'tasks.create' })
-   create(@Payload() createTaskDto: CreateTaskDto): Object{
+   create(@Payload() createTaskRequestDto: CreateTaskRequestDto): Object{
       try {
-         return  this.tasksService.create(createTaskDto);
+         return  this.tasksService.create(createTaskRequestDto);
 
       } catch (error) {
          console.log(error);
@@ -96,7 +98,7 @@ export class TasksController {
    /**
     * 
     * @returns {Object} The response contain the operation status and the list of tasks
-    * 
+    * @param payloadBody - The request id and user id
     * @messagePattern tasks.findAll
     * @description Get all tasks
     * 
@@ -131,10 +133,13 @@ export class TasksController {
     * 
     */
    @MessagePattern({ cmd: 'tasks.findAll' })
-   findAll(): Object {
+   findAll(@Payload() payloadBody: { [key: string]: string }): Object {
       try {
+         // Get requestId and userId from the payload
+         const { requestId, userId } = payloadBody;
+         
          // Check the tasks in Redis, if not found, query the DB
-         return this.tasksCacheService.getTasksForUser();
+         return this.tasksCacheService.getTasksForUser(requestId, userId);
 
       } catch (error) {
          return error;

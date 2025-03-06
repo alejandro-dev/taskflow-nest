@@ -11,7 +11,7 @@ RUN npm install
 # Copia el código fuente restante
 COPY . .
 
-# Expone el puerto 3001
+# Expone el puerto 3003
 EXPOSE 3003
 
 # Comando para ejecutar la aplicación

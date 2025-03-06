@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, InternalServerErrorException, Put, UseGuards, Request } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ClientProxy } from '@nestjs/microservices';
@@ -11,10 +12,12 @@ import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { RolesEnum } from 'src/enums/roles.enum';
 import { TaskAccessGuard } from 'src/guards/task-access.guard';
+import { CreateTaskRequestDto } from './dto/create-task-request.dto';
+import { LoggerService } from 'src/logs/logs.service';
 
 @Controller('tasks')
 export class TasksController {
-   constructor(@Inject(Services.TASKS_SERVICE) private readonly tasksService: ClientProxy) {}
+   constructor(@Inject(Services.TASKS_SERVICE) private readonly tasksService: ClientProxy, private readonly loggerService: LoggerService) {}
    
    /**
     * 
@@ -105,12 +108,21 @@ export class TasksController {
    @Post()
    async create(@Request() req: any, @Body() createTaskDto: CreateTaskDto): Promise<any> {
       try {
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+
          // Assign the author to the task
          createTaskDto.authorId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', req.user.id, 'tasks.create', 'Create task request received', { ...createTaskDto });
+
+         // Create payload to create task
+         const createTaskRequestDto: CreateTaskRequestDto = { createTaskDto, requestId };
          
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.create' }, { ...createTaskDto }).pipe(
+            this.tasksService.send({ cmd: 'tasks.create' }, createTaskRequestDto).pipe(
                catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error creating task');
                })
@@ -118,7 +130,6 @@ export class TasksController {
          );
 
       } catch (error) {
-         console.log(error)
          throw error;
       }
    }
@@ -173,11 +184,18 @@ export class TasksController {
    @UseGuards(AuthGuard, RolesGuard)
    @Roles(RolesEnum.ADMIN)
    @Get()
-   async findAll(): Promise<Object> {
+   async findAll(@Request() req: any): Promise<Object> {
       try {
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findAll', 'Find all task request received');
+
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.findAll' }, {}).pipe(
+            this.tasksService.send({ cmd: 'tasks.findAll' }, { requestId, userId }).pipe(
                catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error getting tasks');
                })
@@ -248,7 +266,6 @@ export class TasksController {
    @Get(':id')
    async findOne(@Param('id') id: string): Promise<Object> {
       try {
-         console.log('entro');
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.findOne' }, { id }).pipe(
@@ -329,7 +346,6 @@ export class TasksController {
    @Get('author/:id')
    async findByAuthorId(@Param('id') authorId: string): Promise<Object> {
       try {
-         console.log('authorId', authorId);
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
             this.tasksService.send({ cmd: 'tasks.findByAuthorId' }, { authorId }).pipe(

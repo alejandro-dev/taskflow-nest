@@ -1,27 +1,31 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import Redis from 'ioredis';
-import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AssignUserDto } from './dto/assign-user.dto';
 import { handleRpcError } from './filters/error-handler.filter';
+import { CreateTaskRequestDto } from './dto/create-task-request.dto';
+import { LoggerService } from 'src/logs/logs.service';
+import { logAndHandleError } from 'src/helpers/log-helper';
 
 @Injectable()
 export class TasksService {
-   constructor(private prisma: PrismaService, @Inject('REDIS_CLIENT') private readonly redis: Redis) {}
+   constructor(private prisma: PrismaService, @Inject('REDIS_CLIENT') private readonly redis: Redis, private readonly loggerService: LoggerService) {}
 
    /**
     * 
     * @description Create a new task
-    * @param createTaskDto - The task data to create a new task 
-    * @param createTaskDto.title - The title of the task
-    * @param createTaskDto.description - The description of the task
-    * @param createTaskDto.assignedTo - The id of the user assigned to the task
-    * @param createTaskDto.dueDate - The due date of the task
-    * @param createTaskDto.status - The status of the task
-    * @param createTaskDto.priority - The priority of the task
+    * @param createTaskRequestDto - The task data to create a new task with the request id
+    * @param createTaskRequestDto.requestId - The request id
+    * @param createTaskRequestDto.createTaskDto - The task data to create a new task 
+    * @param createTaskRequestDto.createTaskDto.title - The title of the task
+    * @param createTaskRequestDto.createTaskDto.description - The description of the task
+    * @param createTaskRequestDto.createTaskDto.assignedTo - The id of the user assigned to the task
+    * @param createTaskRequestDto.createTaskDto.dueDate - The due date of the task
+    * @param createTaskRequestDto.createTaskDto.status - The status of the task
+    * @param createTaskRequestDto.createTaskDto.priority - The priority of the task
     * 
     * @returns {Promise<Object | any>} The response contain the operation status and the created task
     * 
@@ -65,40 +69,46 @@ export class TasksService {
     * }
     * 
     */
-   async create(createTaskDto: CreateTaskDto): Promise<Object | any> {
+   async create(createTaskRequestDto: CreateTaskRequestDto): Promise<Object | any> {
       try {
+         // Get the request id and the task data from the dto
+			const { createTaskDto, requestId } = createTaskRequestDto;
+
          const task = await this.prisma.task.create({
             data: {
-              title: createTaskDto.title,
-              description: createTaskDto.description || null,
-              authorId: createTaskDto.authorId,
-              assignedUserId: createTaskDto.assignedUserId || null
+              title: createTaskRequestDto.createTaskDto.title,
+              description: createTaskRequestDto.createTaskDto.description || null,
+              authorId: createTaskRequestDto.createTaskDto.authorId,
+              assignedUserId: createTaskRequestDto.createTaskDto.assignedUserId || null
             },
          });
 
          // If the task has an assigned user, publish the message to the task.assigned channel
-         if(createTaskDto.assignedUserId) {
+         if(createTaskRequestDto.createTaskDto.assignedUserId) {
             const notificationData = {
-               userId: createTaskDto.assignedUserId,
+               userId: createTaskRequestDto.createTaskDto.assignedUserId,
                taskTitle: task.title,
                taskDescription: task.description,
             }
             await this.redis.publish('task.assigned', JSON.stringify(notificationData));
          }
          
+         // Send de logs to logs microservice and log the event
+			await this.loggerService.logInfo(requestId, 'tasks', createTaskRequestDto.createTaskDto.authorId, 'tasks.create', 'Task created successfully', { ...task });
 
          return { status: 'success', task, message: 'Task created successfully' };
 
       } catch (error) {
-         console.log(error);
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, createTaskRequestDto?.requestId, 'tasks', createTaskRequestDto?.createTaskDto.authorId, 'tasks.create');
       }
    } 
 
    /**
     * 
     * @returns {Promise<Object | any>} The response contain the operation status and the list of tasks
-    * 
+    * @param requestId - The request id
+    * @param userId - The user id
     * @messagePattern tasks.findAll
     * @description Get all tasks
     * 
@@ -132,9 +142,13 @@ export class TasksService {
     * }
     * 
     */
-   async findAll(): Promise<Object | any> {
+   async findAll(requestId: string, userId: string): Promise<Object | any> {
       try {
          const tasks = await this.prisma.task.findMany();
+
+         // Send de logs to logs microservice and log the event
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findAll', 'Task find all successfully (Redis)', { message: `${ tasks.length} tasks were found` });
+
          return { status: 'success', tasks };
 
       } catch (error) {

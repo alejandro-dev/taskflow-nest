@@ -1,9 +1,15 @@
 import { Controller, Get, Post, Body, Inject, HttpException, HttpStatus, BadRequestException, InternalServerErrorException, Param } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { Services } from 'src/enums/services.enum';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { CreateUserDto } from './dto/create-user.dto';
 import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { LoginUserDto } from './dto/login-user.dto';
+import { LoginRequestDto } from './dto/login-request.dto';
+import { LoggerService } from 'src/logs/logs.service';
+import { logAndHandleError } from 'src/helpers/log-helper';
+import { TokenRequestDto } from './dto/token-request.dto';
+import { CreateRequestDto } from './dto/create-request.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -12,7 +18,7 @@ export class AuthController {
 	* @param authService 
 	* @description Inject the auth service to communicate with the auth service
 	*/
-	constructor(@Inject(Services.AUTH_SERVICE) private readonly authService: ClientProxy) {}
+	constructor(@Inject(Services.AUTH_SERVICE) private readonly authService: ClientProxy, private readonly loggerService: LoggerService) {}
 
 	/**
 	* 
@@ -81,9 +87,18 @@ export class AuthController {
 	@Post('register')
 	async create(@Body() createUserDto: CreateUserDto): Promise<any> {
 		try {
+			// Generate a request id to log the request
+			const requestId = uuidv4();
+
+			// Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', createUserDto.email, 'auth.create', 'Create user request received', { email: createUserDto.email });
+
+			// Add request in Payload
+			const createRequestDto: CreateRequestDto = { createUserDto, requestId };
+
 			// We convert the Observable to a Promise and catch the errors
 			return await firstValueFrom(
-				this.authService.send('auth.create', createUserDto).pipe(
+				this.authService.send('auth.create', createRequestDto).pipe(
 					catchError((error) => {
 						throw new BadRequestException(error.message || 'Error creating user');
 					})
@@ -149,9 +164,18 @@ export class AuthController {
 	@Post('login')
 	async login(@Body() loginUserDto: LoginUserDto): Promise<any> {
 		try {
+			// Generate a request id to log the request
+			const requestId = uuidv4();
+
+			// Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', loginUserDto.email, 'auth.login', 'Login request received', { email: loginUserDto.email });
+
+			// Add request in Payload
+			const loginRequestDto: LoginRequestDto = { loginUserDto, requestId };
+
 			// We convert the Observable to a Promise and catch the errors
 			return await firstValueFrom(
-				this.authService.send('auth.login', loginUserDto).pipe(
+				this.authService.send({ cmd: 'auth.login' }, loginRequestDto).pipe(
 					catchError((error) => {
 						throw new InternalServerErrorException(error.message || 'Error logging in user');
 					})
@@ -163,24 +187,61 @@ export class AuthController {
 		}
 	}
 
+	/**
+	 * 
+	 * @description Verify the account
+	 * @param token - Token to validate account
+	 * @returns {Promise<any>} The response contain the operation status and the user
+	 * @example
+	 * // Example success response
+	 * statusCode: 200  
+	 * {    
+	 *     "status": "success",
+	 * 	 "message": "Account verified",   
+	 * }
+	 * 
+	 * @example
+	 * // User already active
+	 * statusCode: 404
+	 * {
+	 *     "message": "User already active",
+	 * 	 "status": "fail"
+	 * }
+	 * 
+	 * @example
+	 * // Internal Server Error response
+	 * statusCode: 500
+	 * {
+	 *     "message": "Internal Server Error",
+	 *     "status": 'error',   
+	 * }	
+	 */
 	@Get('verify-account/:token')
 	async verifyAccount(@Param('token') token: string): Promise<any> {
+		// Generate a request id to log the request
+		const requestId = uuidv4();
+
 		try {
+			// Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', token, 'auth.verify-account', 'Verify account request received', { token });
+
 			// Check if token is valid
-			if(!token || token === 'undefined') throw new HttpException({ status: "fail", message: "Token is invalid" }, HttpStatus.BAD_REQUEST);
+			if(!token || token === 'undefined') throw new RpcException({ message: 'Token is invalid', status: HttpStatus.BAD_REQUEST });
 			
+			// Add request in Payload
+			const tokenRequestDto: TokenRequestDto = { token, requestId };
+
 			// We convert the Observable to a Promise and catch the errors
 			return await firstValueFrom(
-				this.authService.send({ cmd: 'auth.verify-account' }, { token }).pipe(
+				this.authService.send({ cmd: 'auth.verify-account' }, tokenRequestDto).pipe(
 					catchError((error) => {
-						console.log(error);
 						throw new InternalServerErrorException(error.message || 'Error verifying account');
 					})
 				)
 			);
    
-		 } catch (error) {
-			throw error;
-		 }
+		} catch (error) {
+			await logAndHandleError(error, this.loggerService, requestId, 'api-getawey', token, 'auth.verify-account');
+		}
 	}
 }

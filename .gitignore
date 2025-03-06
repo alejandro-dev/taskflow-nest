@@ -1,3 +1,4 @@
 /auth-db
 /tasks-db
+/logs-db
 /redis

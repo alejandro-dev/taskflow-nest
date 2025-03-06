@@ -46,7 +46,6 @@ export class NotificationsService implements OnModuleInit {
    async handleTaskAssigned(message: string) {
       // Parse the message
       const { userId, taskTitle, taskDescription } = JSON.parse(message);
-      console.log(message)
 
       // Find the user by id
       const response = await this.consultEmail(userId);

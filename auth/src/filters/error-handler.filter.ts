@@ -1,6 +1,5 @@
 import { RpcException } from '@nestjs/microservices';
-import { HttpStatus, UnauthorizedException } from '@nestjs/common';
-import { JsonWebTokenError, TokenExpiredError } from '@nestjs/jwt';
+import { HttpStatus } from '@nestjs/common';
 
 /**
  * 
@@ -8,6 +7,7 @@ import { JsonWebTokenError, TokenExpiredError } from '@nestjs/jwt';
  * @description Handle the RpcException and throw a generic Internal Server Error if the error is not an RpcException
  */
 export function handleRpcError(error: any) {
+    console.log(error);
     if (error instanceof RpcException) throw error;
 
     // If the error is not an RpcException, throw a generic Internal Server Error

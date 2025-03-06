@@ -7,6 +7,10 @@ import { UserSchema, User } from './schemas/auth.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { envs } from 'src/config/envs';
 import { RedisModule } from 'src/redis/redis.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { Services } from 'src/enums/services.enum';
+import { QueuesEnum } from 'src/enums/queues.enum';
+import { LoggerService } from 'src/logs/logs.service';
 
 @Module({
    imports: [
@@ -17,10 +21,25 @@ import { RedisModule } from 'src/redis/redis.module';
             expiresIn: '3h'
          }
       }),
-      RedisModule
+      RedisModule,
+      // Connect to RMQ with logs service
+      ClientsModule.register([
+         { 
+            name: Services.LOGS_SERVICE, 
+            transport: Transport.RMQ,
+            options: {
+               urls: [envs.RMQ_URL!],
+               queue: QueuesEnum.LOGS_QUEUE,
+               queueOptions: {
+                  durable: true,
+               },
+               noAck: true
+            }   
+         },
+      ])
    ],
    controllers: [AuthController],
-   providers: [AuthService, UserRepository],
+   providers: [AuthService, UserRepository, LoggerService],
 })
 
 export class AuthModule {}

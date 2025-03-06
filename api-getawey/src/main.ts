@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
-import { RpcExceptionInterceptor } from './filters/exception.filter';
+import { RpcExceptionInterceptor } from './interceptors/rpc-exception.interceptor';
 import { ValidationError } from 'class-validator';
 
 async function bootstrap() {
@@ -23,7 +23,7 @@ async function bootstrap() {
 				return new BadRequestException({
 					status: 'fail',
 					message: "Your request is invalid",
-          			details: formattedErrors,
+          		details: formattedErrors,
 				});
 			},
 		}),
@@ -32,7 +32,7 @@ async function bootstrap() {
 	// Apply the global filter to the app
 	app.useGlobalInterceptors(new RpcExceptionInterceptor());
 
-    // Listen the port
+   // Listen the port
 	await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

@@ -49,8 +49,10 @@ UserSchema.pre<User>('save', async function (next) {
  * @returns
  * @description Compares the plain password with the hashed password
 */
-UserSchema.methods.comparePassword = function (plainPassword: string) {
-  return bcrypt.compare(plainPassword, this.password);
+UserSchema.methods.comparePassword = async function (plainPassword: string) {
+  const match = await bcrypt.compare(plainPassword, this.password);
+  console.log(match);
+  return match;
 };
 
 export { UserSchema };

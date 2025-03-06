@@ -4,14 +4,19 @@ import { RpcException } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from './auth.repository';
 import { CreateUserDto } from './dto/create-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
 import { handleRpcError } from 'src/filters/error-handler.filter';
 import Redis from 'ioredis';
+import { LoginRequestDto } from './dto/login-request.dto';
+import { LoggerService } from 'src/logs/logs.service';
+import { extractErrorDetails } from 'src/helpers/error-handler.helper';
+import { logAndHandleError } from '../helpers/log-helper';
+import { TokenRequestDto } from './dto/token-request.dto';
+import { CreateRequestDto } from './dto/create-request.dto';
 
 @Injectable()
 export class AuthService {
 	// Inject the user repository to communicate with the user repository and the jwt service to sign the token and the redis client to publish the user.register event
-	constructor(private readonly userRepository: UserRepository, private readonly jwtService: JwtService, @Inject('REDIS_CLIENT') private readonly redis: Redis) {}
+	constructor(private readonly userRepository: UserRepository, private readonly jwtService: JwtService, @Inject('REDIS_CLIENT') private readonly redis: Redis, private readonly loggerService: LoggerService) {}
 
 	/**
 	 * 
@@ -46,9 +51,11 @@ export class AuthService {
 	/**
 	 * 
 	 * @description Create a new user
-	 * @param createUserDto - The user data to create a new user
-	 * @param createUserDto.email - The email of the user
-	 * @param createUserDto.password - The password of the user
+	 * @param createRequestDto - The user data to create a new user with the request id
+	 * @param createRequestDto.requestId - The request id
+	 * @param createRequestDto.createUserDto - The user data to create a new user
+	 * @param createRequestDto.createUserDto.email - The email of the user	
+	 * @param createRequestDto.createUserDto.password - The password of the user
 	 * 
 	 * @example
 	 * // Example success response
@@ -74,9 +81,10 @@ export class AuthService {
 	 * 	"status": 'error',
 	 * }
 	 */
-	async create(createUserDto: CreateUserDto): Promise<Object | any> {
+	async create(createRequestDto: CreateRequestDto): Promise<Object | any> {
 		try {
 			// Get the email and password from the dto
+			const { createUserDto, requestId } = createRequestDto;
 			const { password, email } = createUserDto;
 
 			// Check if the user already exists
@@ -87,22 +95,28 @@ export class AuthService {
 			const token = crypto.randomBytes(20).toString('hex');
 
 			// Create the user
-			await this.userRepository.createUser(email, password, token);
+			const userCreated = await this.userRepository.createUser(email, password, token);
 
+			// Send event to send confimation email
 			await this.redis.publish('user.register', JSON.stringify({ email, token }));
-			//this.redis.quit();
 			
-			return { status: 'success', message: 'Create user' };
+			// Send de logs to logs microservice and log the event
+			await this.loggerService.logInfo(requestId, 'auth', userCreated.id, 'auth.create', 'Create user successfully', { userId: userCreated._id, email: userCreated.email, role: userCreated.role });
+			
+			return { status: 'success', message: 'Create user successfully' };
 		
 		} catch (error) {
-			handleRpcError(error);
+			// Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, createRequestDto?.requestId, 'auth', createRequestDto?.createUserDto?.email, 'auth.create');
 		}
 	}
 
 	/**
      * 
      * @description Verify the account
-     * @param token - The token to verify
+	  * @param tokenRequestDto - The token to verify with the request id
+	  * @param tokenRequestDto.requestId - The request id
+	  * @param tokenRequestDto.token - The token to verify
      * @returns {Promise<any>} The response contain the operation status and the user
      * @example
      * // Example success response
@@ -128,8 +142,11 @@ export class AuthService {
      *     "status": 'error',   
      * }
      */
-	async verifyAccount(token: string): Promise<Object | any> {
+	async verifyAccount(tokenRequestDto: TokenRequestDto): Promise<Object | any> {
 		try {
+			// Get the token and requestId from the dto
+			const { token, requestId } = tokenRequestDto;
+
 			// Find de user by token and check if the user is active
 			const user = await this.userRepository.findByTokenNotActive(token);
 			if(!user) throw new RpcException({ message: 'User already active', status: HttpStatus.NOT_FOUND });
@@ -137,19 +154,25 @@ export class AuthService {
 			// Update the user active to true
 			await this.userRepository.activeUser(user._id as string);
 
+			// Send de logs to logs microservice and log the event
+			await this.loggerService.logInfo(requestId, 'auth', user.id, 'auth.verify-account', 'Account verified', { userId: user.id, token: token });
+			
 			return { status: 'success', message: 'Account verified' };
 
 		} catch (error) {
-			handleRpcError(error);
+			// Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, tokenRequestDto?.requestId, 'auth', tokenRequestDto?.token, 'auth.verify-account');
 		}
 	}
 
 	/**
 	 * 
 	 * @description Login a user
-	 * @param loginUserDto - The user data to login a user
-	 * @param loginUserDto.email - The email of the user
-	 * @param loginUserDto.password - The password of the user
+	 * @param loginRequestDto - The user data to login a user with the request id
+	 * @param loginRequestDto.requestId - The request id
+	 * @param loginRequestDto.loginUserDto - The user data to login a user
+	 * @param loginRequestDto.loginUserDto.email - The email of the user
+	 * @param loginRequestDto.loginUserDto.password - The password of the user
 	 * 
 	 * @example
 	 * // Example success response
@@ -179,9 +202,10 @@ export class AuthService {
 	 * 	"status": 'error',
 	 * }
 	 */
-	async login(loginUserDto: LoginUserDto) {
+	async login(loginRequestDto: LoginRequestDto) {
 		try {
 			// Get the email and password from the dto
+			const { loginUserDto, requestId } = loginRequestDto;
 			const { password, email } = loginUserDto;
 
 			// Check if the user already exists 
@@ -192,15 +216,19 @@ export class AuthService {
 			if(!user.active) throw new RpcException({ message: 'The account is not active', status: HttpStatus.UNAUTHORIZED });
 			
 			// Check if the password is correct
-			if(!user.comparePassword(password)) throw new RpcException('Email or password incorrect');
+			if(!await user.comparePassword(password)) throw new RpcException({ message: 'Email or password incorrect', status: HttpStatus.BAD_REQUEST });
 
 			// Delete the password, active and updatedAt from the user object
 			const { active, password: passUser, createdAt, updatedAt, ...userLogged } = user.toObject();
 
+			// Send de logs to logs microservice and log the event
+			await this.loggerService.logInfo(requestId, 'auth', userLogged._id, 'auth.login', 'Login successfully', { userId: userLogged._id, email: userLogged.email, role: userLogged.role });
+
 			return { user: userLogged, token: this.signToken({id: userLogged._id, email: userLogged.email, role: userLogged.role}), status: 'success'};
 
 		} catch (error) {
-			handleRpcError(error);
+			// Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, loginRequestDto?.requestId, 'auth', loginRequestDto?.loginUserDto?.email, 'auth.login');
 		}
 	}
 
@@ -254,5 +282,5 @@ export class AuthService {
 		} catch (error) {
 			handleRpcError(error);
 		}
-    }
+   }
 }

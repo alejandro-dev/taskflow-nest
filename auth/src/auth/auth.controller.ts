@@ -1,8 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
+import { LoginRequestDto } from './dto/login-request.dto';
+import { TokenRequestDto } from './dto/token-request.dto';
+import { CreateRequestDto } from './dto/create-request.dto';
 
 @Controller()
 export class AuthController {
@@ -21,9 +22,11 @@ export class AuthController {
     /**
      * 
      * @messagePattern auth.create
-     * @param createUserDto  - The user data to create a new user
-     * @param createUserDto.email - The email of the user
-     * @param createUserDto.password - The password of the user
+     * @param createRequestDto  - The user data to create a new user with the request id
+     * @param createRequestDto.requestId - The request id
+     * @param createRequestDto.createUserDto  - The user data to create a new user
+     * @param createRequestDto.createUserDto.email - The email of the user
+     * @param createRequestDto.createUserDto.password - The password of the user
      * 
      * @description Create a new user
      * @description Send the request to the auth service
@@ -71,9 +74,9 @@ export class AuthController {
      * }
      */
     @MessagePattern('auth.create')
-    async create(@Payload() createUserDto: CreateUserDto): Promise<any> {
+    async create(@Payload() createRequestDto: CreateRequestDto): Promise<any> {
         try {
-            return this.authService.create(createUserDto);
+            return this.authService.create(createRequestDto);
 
         } catch (error) {
             return error;
@@ -84,7 +87,9 @@ export class AuthController {
      * 
      * @messagePattern auth.verify-account 
      * @description Verify the account
-     * @param token - The token to verify
+     * @param verifyAccountRequestDto - The token to verify with the request id
+     * @param verifyAccountRequestDto.requestId - The request id
+     * @param verifyAccountRequestDto.token - The token to verify
      * @returns {Promise<any>} The response contain the operation status and the user
      * @example
      * // Example success response
@@ -111,9 +116,9 @@ export class AuthController {
      * }
      */
     @MessagePattern({ cmd: 'auth.verify-account' })
-    verifyAccount(@Payload("token") token: string): Promise<any> {
+    verifyAccount(@Payload() tokenRequestDto: TokenRequestDto): Promise<any> {
         try {
-            return this.authService.verifyAccount(token);
+            return this.authService.verifyAccount(tokenRequestDto);
             
         } catch (error) {
             return error;
@@ -123,9 +128,11 @@ export class AuthController {
     /**
      * @messagePattern auth.login
      * 
-     * @param loginUserDto - The user data to login a user
-     * @param loginUserDto.email - The email of the user
-     * @param loginUserDto.password - The password of the user
+     * @param loginRequestDto - The user data to login a user with the request id
+     * @param loginRequestDto.requestId - The request id
+     * @param loginRequestDto.loginUserDto - The user data to login a user
+     * @param loginRequestDto.loginUserDto.email - The email of the user
+     * @param loginRequestDto.loginUserDto.password - The password of the user
      * 
      * @description Login a user
      * @description Send the request to the auth service
@@ -173,10 +180,10 @@ export class AuthController {
      * }
      *
      */
-    @MessagePattern('auth.login')
-    async login(@Payload() loginUserDto: LoginUserDto): Promise<any> {
+    @MessagePattern({ cmd: 'auth.login' })
+    async login(@Payload() loginRequestDto: LoginRequestDto): Promise<any> {
         try {
-            return this.authService.login(loginUserDto);
+            return this.authService.login(loginRequestDto);
 
         } catch (error) {
             return error;
