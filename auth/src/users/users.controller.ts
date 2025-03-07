@@ -22,6 +22,9 @@ export class UsersController {
     * @returns {Promise<Object | any>} The response contain the operation status and the list of users
     * 
     * @messagePattern users.findAll
+    * @param {any} payloadBody - The request id and user id
+    * @param {string} payloadBody.requestId - The request id
+    * @param {string} payloadBody.userId - The user id
     * @description Get all users
     * 
     * @example
@@ -46,9 +49,13 @@ export class UsersController {
     * }
     */
    @MessagePattern({ cmd: 'users.findAll' })
-   async findAll(): Promise<Object | any> {
+   async findAll(@Payload() payloadBody: { [key: string]: string }): Promise<Object | any> {
       try {
-         const users = await this.usersService.findAll();
+         // Get requestId and userId from the payload
+         const { requestId, userId } = payloadBody;
+
+         // Find all users
+         const users = await this.usersService.findAll(requestId, userId);
          return { status: 'success', users };
 
       } catch (error) {

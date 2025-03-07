@@ -1,15 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from 'src/auth/auth.repository';
 import { handleRpcError } from 'src/filters/error-handler.filter';
+import { logAndHandleError } from 'src/helpers/log-helper';
+import { LoggerService } from 'src/logs/logs.service';
 
 @Injectable()
 export class UsersService {
    // Inject the user repository to communicate with the user repository
-	constructor(private readonly userRepository: UserRepository) {}
+	constructor(private readonly userRepository: UserRepository, private readonly loggerService: LoggerService) {}
 
    /**
     * 
     * @returns {Promise<Object | any>} The list of users
+    * @param {string} requestId - The request id
+    * @param {string} userId - The user id
+    * 
+    * @messagePattern users.findAll
     * @description Get all users with the id and email and active status
     * 
     * @example
@@ -34,12 +40,25 @@ export class UsersService {
     * }
     *
     */
-   async findAll(): Promise<Object | any> {
+   async findAll(requestId: string, userId: string): Promise<Object | any> {
       try {
-         return await this.userRepository.findAll(['id', 'email']); 
+         console.log('requestId', requestId);
+         console.log('userId', userId);
+         
+         // Find all users
+         const users = await this.userRepository.findAll(['id', 'email']); 
+
+         // Send de logs to logs microservice and log the event
+         console.log('enviando...')
+         await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully', { message: `${ users.length} users were found` });
+         console.log('enviado')
+
+         // Return the list of users
+         return users;
          
       } catch (error) {
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+         await logAndHandleError(error, this.loggerService, requestId, 'auth', userId, 'users.findAll');
       }
    }
 

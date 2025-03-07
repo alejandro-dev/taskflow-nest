@@ -1,11 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, UseGuards, Request, InternalServerErrorException } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { ClientProxy } from '@nestjs/microservices';
 import { Services } from 'src/enums/services.enum';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { LoggerService } from 'src/logs/logs.service';
+import { catchError, firstValueFrom } from 'rxjs';
 
 @Controller('users')
 export class UsersController {
-   constructor(@Inject(Services.AUTH_SERVICE) private readonly usersService: ClientProxy) {}
+   constructor(@Inject(Services.AUTH_SERVICE) private readonly usersService: ClientProxy, private readonly loggerService: LoggerService) {}
 
    /**
 	 * 
@@ -20,9 +23,7 @@ export class UsersController {
     * 
     * @returns {Promise<Object | any>} The response contain the operation status and the list of users
     * 
-    * @param findAllDto - The user data to find all users
-    * @param findAllDto.email - The email of the user
-    * @param findAllDto.password - The password of the user
+    * @param {any} req - The request object
     * 
     * @messagePattern users.findAll
     * @description Get all users
@@ -57,9 +58,23 @@ export class UsersController {
     */
    @UseGuards(AuthGuard)
    @Get()
-   findAll() {
+   async findAll(@Request() req: any): Promise<Object | any> {
       try {
-         return this.usersService.send({ cmd: "users.findAll" }, {});
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'users.findAll', 'Find all user request received');
+
+         // We convert the Observable to a Promise and catch the errors
+         return await firstValueFrom(
+            this.usersService.send({ cmd: 'users.findAll' }, {requestId, userId}).pipe(
+               catchError((error) => {
+                  throw new InternalServerErrorException(error.message || 'Error deleting task');
+               })
+            )
+         );
 
       } catch (error) {
          throw error;
