@@ -14,6 +14,10 @@ import { RolesEnum } from 'src/enums/roles.enum';
 import { TaskAccessGuard } from 'src/guards/task-access.guard';
 import { CreateTaskRequestDto } from './dto/create-task-request.dto';
 import { LoggerService } from 'src/logs/logs.service';
+import { UpdateTaskRequestDto } from './dto/update-task-request.dto';
+import { ChangeStatusRequestDto } from './dto/change-status-request.dto';
+import { AssignUserRequestDto } from './dto/assign-user-request.dto';
+import { UUID } from 'crypto';
 
 @Controller('tasks')
 export class TasksController {
@@ -51,12 +55,13 @@ export class TasksController {
     * @description Create a new task
     * @returns {Promise<Object>} The response contain the operation status and the created task
     * 
-    * @param createTaskDto Object with the task data
-    * @param createTaskDto.title {string} The title of the task
-    * @param createTaskDto.description {string} The description of the task
-    * @param createTaskDto.assignedTo {string} The id of the user assigned to the task
-    * @param createTaskDto.dueDate {string} The due date of the task
-    * @param createTaskDto.status {string} The status of the task. It can be 'pending', 'in_progress' or 'done'
+    * @param {any} req The request object
+    * @param {Object} createTaskDto Object with the task data
+    * @param {string} createTaskDto.title The title of the task
+    * @param {string} createTaskDto.description The description of the task
+    * @param {string} createTaskDto.assignedTo The id of the user assigned to the task
+    * @param {string} createTaskDto.dueDate The due date of the task
+    * @param {string} createTaskDto.status The status of the task. It can be 'pending', 'in_progress' or 'done'
     *   
     * @response 200 {object} task - The created task
     * @response 400 {string} message - "Bad Request"
@@ -137,6 +142,7 @@ export class TasksController {
    /**
     * 
     * @route GET /tasks
+    * @param {any} req  The request object
     * @description Get all tasks
     * @returns {Promise<Object>} The response contain the operation status and the tasks
     * 
@@ -211,7 +217,8 @@ export class TasksController {
     *
     * @route GET /tasks/:id
     * @description Get a task by id
-    * @param id {string} The id of the task
+    * @param {any} req - The request object
+    * @param {string} id - The id of the task
     * @returns {Promise<Object>} The response contain the operation status and the task
     * 
     * @response 200 {object} task - The task    
@@ -264,11 +271,18 @@ export class TasksController {
     */
    @UseGuards(AuthGuard, TaskAccessGuard)
    @Get(':id')
-   async findOne(@Param('id') id: string): Promise<Object> {
+   async findOne(@Request() req: any, @Param('id') id: string): Promise<Object> {
       try {
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findOne', 'Find one task request received', { taskId: id });
+
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.findOne' }, { id }).pipe(
+            this.tasksService.send({ cmd: 'tasks.findOne' }, { id, requestId, userId }).pipe(
                catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error getting task');
                })
@@ -284,6 +298,7 @@ export class TasksController {
     * 
     * @route GET /author/:authorId
     * @description Get a task by author id
+    * @param {any} req  The request object
     * @param {string} authorId - Author id
     * @returns {Promise<Object>} - Task
     * 
@@ -344,11 +359,18 @@ export class TasksController {
    @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Get('author/:id')
-   async findByAuthorId(@Param('id') authorId: string): Promise<Object> {
+   async findByAuthorId(@Request() req: any, @Param('id') authorId: string): Promise<Object> {
       try {
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findByAuthorId', 'Find author tasks request received', { authorId });
+
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.findByAuthorId' }, { authorId }).pipe(
+            this.tasksService.send({ cmd: 'tasks.findByAuthorId' }, { authorId, requestId, userId }).pipe(
                catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error getting task');
                })
@@ -364,6 +386,7 @@ export class TasksController {
     * 
     * @route GET /author/:authorId
     * @description Get a task by author id
+    * @param {any} The request object
     * @param {string} assignedId - Author id
     * @returns {Promise<Object>} - Task
     * 
@@ -423,11 +446,18 @@ export class TasksController {
     */
    @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
    @Get('assigned/:id')
-   async findByAssignedId(@Param('id') assignedId: string): Promise<Object> {
+   async findByAssignedId(@Request() req: any, @Param('id') assignedId: string): Promise<Object> {
       try {
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findByAssignedId', 'Find user assigned tasks request received', { assignedId });
+
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.findByAssignedId' }, { assignedId }).pipe(
+            this.tasksService.send({ cmd: 'tasks.findByAssignedId' }, { assignedId, requestId, userId }).pipe(
                catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error getting task');
                })
@@ -443,14 +473,14 @@ export class TasksController {
     *
     * @route PUT /tasks/:id
     * 
-    * @param id {string} The id of the task
-    * @param updateTaskDto {object} The task data to update
-    * @param updateTaskDto Object with the task data
-    * @param updateTaskDto.title {string} The title of the task
-    * @param updateTaskDto.description {string} The description of the task
-    * @param updateTaskDto.assignedTo {string} The id of the user assigned to the task
-    * @param updateTaskDto.dueDate {string} The due date of the task
-    * @param updateTaskDto.status {string} The status of the task. It can be 'pending', 'in_progress' or 'done'
+    * @param {any} req - The request object
+    * @param {string} id - The id of the task
+    * @param {Object} updateTaskDto The task data to update
+    * @param {string} updateTaskDto.title The title of the task
+    * @param {string} updateTaskDto.description The description of the task
+    * @param {string} updateTaskDto.assignedTo The id of the user assigned to the task
+    * @param {string} updateTaskDto.dueDate The due date of the task
+    * @param {string} updateTaskDto.status The status of the task. It can be 'pending', 'in_progress' or 'done'
     * @returns {Promise<Object>} The response contain the operation status and the updated task
     * 
     * @response 200 {object} task - The updated task
@@ -517,14 +547,25 @@ export class TasksController {
     */
    @UseGuards(AuthGuard, TaskAccessGuard)
    @Put(':id')
-   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto): Promise<Object> {
+   async update(@Request() req: any, @Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto): Promise<Object> {
       try {
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.update', 'Update task request received', { id, updateTaskDto });
+
+         // Create the payload to update the task
          const userUpdated = { ...updateTaskDto, id };
+         const payload: UpdateTaskRequestDto = { updateTaskDto: userUpdated, requestId, userId };
+
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.update' }, { ...userUpdated }).pipe(
+            this.tasksService.send({ cmd: 'tasks.update' }, payload).pipe(
                catchError((error) => {
-                  throw new InternalServerErrorException(error.message || 'Error deleting task');
+                  throw error;
+                  // throw new InternalServerErrorException(error.message || 'Error deleting task');
                })
             )
          );
@@ -538,6 +579,7 @@ export class TasksController {
     * @route DELETE /tasks/:id
     * @description Delete a task by id
     * 
+    * @param {any} req - The request object
     * @param {string} id - The ID of the task
     * @returns {Promise<Object>} The response containing the operation status and message
     * 
@@ -577,11 +619,18 @@ export class TasksController {
    @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Delete(':id')
-   async remove(@Param('id') id: string): Promise<Object> {
+   async remove(@Request() req: any, @Param('id') id: string): Promise<Object> {
       try {
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.delete', 'Delete task request received', { id });
+
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.delete' }, { id }).pipe(
+            this.tasksService.send({ cmd: 'tasks.delete' }, { id, requestId, userId }).pipe(
                catchError((error) => {
                   console.log(error);
                   throw new InternalServerErrorException(error.message || 'Error deleting task');
@@ -598,6 +647,7 @@ export class TasksController {
     * 
     * @route PATCH /tasks/:id/change-status
     * @returns {Promise<Object>} The response contain the operation status and the updated task
+    * @param {any} req - The request object
     * @param {string} id - The id of the task
     * @param {ChangeStatusDto} changeStatusDto - The task data to change the status of a task
     * @param {string} changeStatusDto.status - The status of the task. It can be 'pending', 'in_progress' or 'done'
@@ -661,13 +711,24 @@ export class TasksController {
     */
    @UseGuards(AuthGuard, TaskAccessGuard)
    @Patch(':id/change-status')
-   async changeStatus(@Param('id') id: string, @Body() changeStatusDto: ChangeStatusDto): Promise<Object> {
+   async changeStatus(@Request() req: any, @Param('id') id: string, @Body() changeStatusDto: ChangeStatusDto): Promise<Object> {
       try {
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Create the task state to update
          const taskStateUpdated = { id, status: changeStatusDto.status };
+
+         // Create the payload to update the task
+         const payload: ChangeStatusRequestDto = { changeStatusDto: taskStateUpdated, requestId, userId };
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.change-status', 'Change task status request received', { id, taskStateUpdated });
 
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.change-status' }, { ...taskStateUpdated }).pipe(
+            this.tasksService.send({ cmd: 'tasks.change-status' }, payload).pipe(
                catchError((error) => {
                   throw new InternalServerErrorException(error.message || 'Error deleting task');
                })
@@ -682,7 +743,8 @@ export class TasksController {
    /**
     * 
     * @route PATCH /tasks/:id/assign-user
-    * @param id - The id of the task
+    * @param {any} req - The request object
+    * @param {string} id - The id of the task
     * @param {AssignUserDto} assignUserDto - The task data to assign the author of a task
     * @param {string} assignAuthorDto.assignedTo - The id of the user assigned to the task
     * 
@@ -749,14 +811,23 @@ export class TasksController {
    @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Patch(':id/assign-user')
-   async assignAuthor(@Param('id') id: string, @Body() assignUserDto: AssignUserDto): Promise<Object> {
+   async assignAuthor(@Request() req: any, @Param('id') id: UUID, @Body() assignUserDto: AssignUserDto): Promise<Object> {
       try {
-         const taskStateUpdated = { id, assignedTo: assignUserDto.assignedUserId };
+         // Generate a request id to log the request
+		   const requestId = uuidv4();
+         const userId = req.user.id;
+
+         // Send de logs to logs microservice
+			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.assign-user', 'Assign user request received', { id, ...assignUserDto });
+
+         // Create the payload to update the task
+         const payload: AssignUserRequestDto = { assignUserDto, id, requestId, userId };
 
          // We convert the Observable to a Promise and catch the errors
          return await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.assign-author' }, { ...taskStateUpdated }).pipe(
+            this.tasksService.send({ cmd: 'tasks.assign-user' }, payload).pipe(
                catchError((error) => {
+                  console.log(error);
                   throw new InternalServerErrorException(error.message || 'Error author updated task');
                })
             )

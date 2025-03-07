@@ -5,10 +5,10 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { AssignUserDto } from './dto/assign-user.dto';
-import { handleRpcError } from './filters/error-handler.filter';
-import { CreateTaskRequestDto } from './dto/create-task-request.dto';
 import { LoggerService } from 'src/logs/logs.service';
 import { logAndHandleError } from 'src/helpers/log-helper';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UUID } from 'crypto';
 
 @Injectable()
 export class TasksService {
@@ -17,15 +17,14 @@ export class TasksService {
    /**
     * 
     * @description Create a new task
-    * @param createTaskRequestDto - The task data to create a new task with the request id
-    * @param createTaskRequestDto.requestId - The request id
-    * @param createTaskRequestDto.createTaskDto - The task data to create a new task 
-    * @param createTaskRequestDto.createTaskDto.title - The title of the task
-    * @param createTaskRequestDto.createTaskDto.description - The description of the task
-    * @param createTaskRequestDto.createTaskDto.assignedTo - The id of the user assigned to the task
-    * @param createTaskRequestDto.createTaskDto.dueDate - The due date of the task
-    * @param createTaskRequestDto.createTaskDto.status - The status of the task
-    * @param createTaskRequestDto.createTaskDto.priority - The priority of the task
+    * @param requestId - The request id
+    * @param createTaskDto - The task data to create a new task 
+    * @param createTaskDto.title - The title of the task
+    * @param createTaskDto.description - The description of the task
+    * @param createTaskDto.assignedTo - The id of the user assigned to the task
+    * @param createTaskDto.dueDate - The due date of the task
+    * @param createTaskDto.status - The status of the task
+    * @param createTaskDto.priority - The priority of the task
     * 
     * @returns {Promise<Object | any>} The response contain the operation status and the created task
     * 
@@ -69,24 +68,21 @@ export class TasksService {
     * }
     * 
     */
-   async create(createTaskRequestDto: CreateTaskRequestDto): Promise<Object | any> {
+   async create(createTaskDto: CreateTaskDto, requestId: string): Promise<Object | any> {
       try {
-         // Get the request id and the task data from the dto
-			const { createTaskDto, requestId } = createTaskRequestDto;
-
          const task = await this.prisma.task.create({
             data: {
-              title: createTaskRequestDto.createTaskDto.title,
-              description: createTaskRequestDto.createTaskDto.description || null,
-              authorId: createTaskRequestDto.createTaskDto.authorId,
-              assignedUserId: createTaskRequestDto.createTaskDto.assignedUserId || null
+              title: createTaskDto.title,
+              description: createTaskDto.description || null,
+              authorId: createTaskDto.authorId,
+              assignedUserId: createTaskDto.assignedUserId || null
             },
          });
 
          // If the task has an assigned user, publish the message to the task.assigned channel
-         if(createTaskRequestDto.createTaskDto.assignedUserId) {
+         if(createTaskDto.assignedUserId) {
             const notificationData = {
-               userId: createTaskRequestDto.createTaskDto.assignedUserId,
+               userId: createTaskDto.assignedUserId,
                taskTitle: task.title,
                taskDescription: task.description,
             }
@@ -94,13 +90,13 @@ export class TasksService {
          }
          
          // Send de logs to logs microservice and log the event
-			await this.loggerService.logInfo(requestId, 'tasks', createTaskRequestDto.createTaskDto.authorId, 'tasks.create', 'Task created successfully', { ...task });
+			await this.loggerService.logInfo(requestId, 'tasks', createTaskDto.authorId, 'tasks.create', 'Task created successfully', { ...task });
 
          return { status: 'success', task, message: 'Task created successfully' };
 
       } catch (error) {
          // Return the error to the caller and save the error in the logs
-			await logAndHandleError(error, this.loggerService, createTaskRequestDto?.requestId, 'tasks', createTaskRequestDto?.createTaskDto.authorId, 'tasks.create');
+			await logAndHandleError(error, this.loggerService, requestId, 'tasks', createTaskDto.authorId, 'tasks.create');
       }
    } 
 
@@ -147,12 +143,13 @@ export class TasksService {
          const tasks = await this.prisma.task.findMany();
 
          // Send de logs to logs microservice and log the event
-         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findAll', 'Task find all successfully (Redis)', { message: `${ tasks.length} tasks were found` });
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findAll', 'Task find all successfully', { message: `${ tasks.length} tasks were found` });
 
          return { status: 'success', tasks };
 
       } catch (error) {
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.findAll');
       }
    }
 
@@ -163,6 +160,8 @@ export class TasksService {
     * @messagePattern tasks.findOne
     * @description Get a task by id
     * @param id - The id of the task
+    * @param requestId - The request id
+    * @param userId - The user id
     * 
     * @example
     * // Example success response
@@ -191,7 +190,7 @@ export class TasksService {
     * }
     * 
     */
-   async findOne(id: string): Promise<Object | any> {
+   async findOne(id: string, requestId: string, userId: string): Promise<Object | any> {
       try {
          const task = await this.prisma.task.findUnique({
             where: {
@@ -202,59 +201,163 @@ export class TasksService {
          // If the task doesn't exist, throw an error
          if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
+         // Send de logs to logs microservice and log the event
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findOne', `Task #${task.id} find successfully`, { task } );
+
          return { status: 'success', task };
 
       } catch (error) {
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.findOne');
       }
    }
 
-   async findByAuthorId(authorId: string): Promise<Object | any> {
+   /**
+    * 
+    * @returns {Object} The response contain the operation status and the task
+    * 
+    * @description Get a task by author id
+    * @param {Object} payloadBody - The author id, request id and user id
+    * @param {string} payloadBody.authorId - The author id
+    * @param {string} payloadBody.requestId - The request id
+    * @param {string} payloadBody.userId - The user id
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *    }
+    * }
+    * 
+    * @example
+    * // Not found response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }  
+    *   
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    * 
+    */
+   async findByAuthorId(authorId: string, requestId: string, userId: string): Promise<Object | any> {
       try {
-         const task = await this.prisma.task.findMany({
+         const tasks = await this.prisma.task.findMany({
             where: {
                authorId
             }
          });
 
          // If the task doesn't exist, throw an error
-         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+         if(!tasks) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
-         return { status: 'success', tasks: task };
+         // Send de logs to logs microservice and log the event
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by author #${authorId} find all successfully`, { tasks } );
+
+         return { status: 'success', tasks };
 
       } catch (error) {
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.findByAuthorId');
       }
    }
 
-   async findByAssignedId(assignedUserId: string): Promise<Object | any> {
+   /**
+    * 
+    * @returns {Object} The response contain the operation status and the task
+    * 
+    * @description Get a task by assigned id
+    * @param {Object} payloadBody - The author id, request id and user id
+    * @param {string} payloadBody.assignedId - The assigned id
+    * @param {string} payloadBody.requestId - The request id
+    * @param {string} payloadBody.userId - The user id
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *    }
+    * }
+    *  
+    * @example
+    * // Not found response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }  
+    *  
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    * 
+    */
+   async findByAssignedId(assignedUserId: string, requestId: string, userId: string): Promise<Object | any> {
       try {
-         const task = await this.prisma.task.findMany({
+         const tasks = await this.prisma.task.findMany({
             where: {
                assignedUserId
             }
          });
 
          // If the task doesn't exist, throw an error
-         if(!task) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
+         if(!tasks) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
-         return { status: 'success', tasks: task };
+         // Send de logs to logs microservice and log the event
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by user assigned #${assignedUserId} find all successfully`, { tasks } );
+
+         return { status: 'success', tasks };
 
       } catch (error) {
-         handleRpcError(error);
-      }
+         // Return the error to the caller and save the error in the logs
+         await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.findByAuthorId');      }
    }
 
    /**
     * 
-    * @param updateTaskDto - The task data to update a task
-    * @param updateTaskDto.id - The id of the task
-    * @param updateTaskDto.title - The title of the task
-    * @param updateTaskDto.description - The description of the task
-    * @param updateTaskDto.assignedTo - The id of the user assigned to the task
-    * @param updateTaskDto.dueDate - The due date of the task
-    * @param updateTaskDto.status - The status of the task
-    * @param updateTaskDto.priority - The priority of the task
+    * @param {Object} updateTaskDto - The task data to update a task, request id and user id
+    * @param {string} updateTaskDto.id - The id of the task
+    * @param {string} updateTaskDto.title - The title of the task
+    * @param {string} updateTaskDto.description - The description of the task
+    * @param {string} updateTaskDto.assignedTo - The id of the user assigned to the task
+    * @param {string} updateTaskDto.dueDate - The due date of the task
+    * @param {string} updateTaskDto.status - The status of the task
+    * @param {string} updateTaskDto.priority - The priority of the task
+    * @param {string} requestId - The request id
+    * @param {string} userId - The user id
+    * 
     * @returns {Promise<Object | any>} The response contain the operation status and the updated task
     * 
     * @messagePattern tasks.update
@@ -299,7 +402,7 @@ export class TasksService {
     *    "message": "Internal Server Error"
     * }
     */
-   async update(updateTaskDto: UpdateTaskDto): Promise<Object | any> {
+   async update(updateTaskDto: UpdateTaskDto, requestId: string, userId: string): Promise<Object | any> {
       try {
          const task = await this.prisma.task.findUnique({
             where: {
@@ -317,15 +420,22 @@ export class TasksService {
             data: updateTaskDto
          });
 
+         // Send de logs to logs microservice and log the event
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.task', `Task by id #${updateTaskDto.id} is updated successfully`, { ...taskUpdated } );
+
          return { status: 'success', task: taskUpdated, message: 'Task updated successfully' };
 
       } catch (error) {
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.update');
       }
-      return `This action updates a #${updateTaskDto.id} task`;
    }
 
    /**
+    * 
+    * @param {string} id - The id of the task
+    * @param {string} requestId - The request id
+    * @param {string} userId - The user id
     * 
     * @returns {Promise<Object | any>} The response contain the operation status and the message
     * 
@@ -357,7 +467,7 @@ export class TasksService {
     * }
     * 
     */
-   async remove(id: string): Promise<Object | any> {
+   async remove(id: string, requestId: string, userId: string): Promise<Object | any> {
       try {
          // Check if the task exists
          const task = await this.prisma.task.findUnique({
@@ -376,10 +486,14 @@ export class TasksService {
             }
          });
 
+         // Send de logs to logs microservice and log the event
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.delete', `Task by id #${id} is deleted successfully`, { ...task } );
+
          return { status: 'success', message: `The task #${id} has been deleted` };
 
       } catch (error) {
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+			await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.delete');
       }
    }
 
@@ -389,9 +503,11 @@ export class TasksService {
     * 
     * @description Change the status of a task by id
     * 
-    * @param changeStatusDto - The task data to change the status of a task
-    * @param changeStatusDto.id - The id of the task
-    * @param changeStatusDto.status - The status of the task
+    * @param {Object} changeStatusDto - The task data to change the status of a task
+    * @param {string} changeStatusDto.id - The id of the task
+    * @param {string} changeStatusDto.status - The status of the task
+    * @param {string} requestId - The request id
+    * @param {string} userId - The user id
     * 
     * @example
     * // Example success response
@@ -428,7 +544,7 @@ export class TasksService {
     *    "message": "Internal Server Error"
     * }
     */
-   async changeStatus(changeStatusDto: ChangeStatusDto): Promise<Object | any> {
+   async changeStatus(changeStatusDto: ChangeStatusDto, requestId: string, userId: string): Promise<Object | any> {
       try {
          // Check if the task exists
          const task = await this.prisma.task.findUnique({
@@ -450,10 +566,14 @@ export class TasksService {
             }
          });
 
+         // Send de logs to logs microservice and log the event
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.change-status', `Task by id #${changeStatusDto.id} stastus updated successfully`, { ...taskUpdated } );
+
          return { status: 'success', task: taskUpdated, message: 'Task stastus updated successfully' };
 
       } catch (error) {
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+		   await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.change-status');
       }
    }
 
@@ -504,12 +624,12 @@ export class TasksService {
     *    "message": "Internal Server Error"
     * }
     */
-   async assignUser(assignUserrDto: AssignUserDto): Promise<Object | any> {
+   async assignUser(assignUserrDto: AssignUserDto, id: UUID, requestId: string, userId: string): Promise<Object | any> {
       try {
          // Check if the task exists
          const task = await this.prisma.task.findUnique({
             where: {
-               id: assignUserrDto.id
+               id: id
             }
          });
 
@@ -519,7 +639,7 @@ export class TasksService {
          // Update the task
          const taskUpdated = await this.prisma.task.update({
             where: {
-               id: assignUserrDto.id
+               id: id
             },
             data: {
                assignedUserId: assignUserrDto.assignedUserId
@@ -533,13 +653,17 @@ export class TasksService {
             taskDescription: taskUpdated.description,
          }
 
+         // Send email to the assigned user
          await this.redis.publish('task.assigned', JSON.stringify(notificationData));
-         // this.redis.quit();
+         
+         // Send de logs to logs microservice and log the event
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.assign-user', `Task by id #${id} assigned user successfully`, { ...taskUpdated } );
 
          return { status: 'success', task: taskUpdated, message: 'Task author updated successfully' };
 
       } catch (error) {
-         handleRpcError(error);
+         // Return the error to the caller and save the error in the logs
+         await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.assign-user');     
       }
    }
 }
