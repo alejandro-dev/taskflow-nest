@@ -41,17 +41,12 @@ export class UsersService {
     *
     */
    async findAll(requestId: string, userId: string): Promise<Object | any> {
-      try {
-         console.log('requestId', requestId);
-         console.log('userId', userId);
-         
+      try {   
          // Find all users
          const users = await this.userRepository.findAll(['id', 'email']); 
 
          // Send de logs to logs microservice and log the event
-         console.log('enviando...')
          await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully', { message: `${ users.length} users were found` });
-         console.log('enviado')
 
          // Return the list of users
          return users;

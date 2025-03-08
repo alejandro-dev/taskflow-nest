@@ -5,7 +5,6 @@ import { UUID } from 'crypto';
 
 export class AssignUserRequestDto {
    @IsNotEmpty()
-   @Type(() => AssignUserDto)
    assignUserDto: AssignUserDto;
 
    @IsString()

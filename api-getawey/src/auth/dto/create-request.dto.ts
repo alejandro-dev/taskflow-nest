@@ -4,7 +4,6 @@ import { CreateUserDto } from './create-user.dto';
 
 export class CreateRequestDto {
    @IsNotEmpty()
-   @Type(() => CreateUserDto)
    createUserDto: CreateUserDto;
 
    @IsString()

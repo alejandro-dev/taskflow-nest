@@ -4,7 +4,6 @@ import { ChangeStatusDto } from './change-status.dto';
 
 export class ChangeStatusRequestDto {
    @IsNotEmpty()
-   @Type(() => ChangeStatusDto)
    changeStatusDto: ChangeStatusDto;
 
    @IsString()

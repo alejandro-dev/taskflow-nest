@@ -4,7 +4,6 @@ import { Type } from 'class-transformer';
 
 export class LoginRequestDto {
    @IsNotEmpty()
-   @Type(() => LoginUserDto)
    loginUserDto: LoginUserDto;
 
    @IsString()

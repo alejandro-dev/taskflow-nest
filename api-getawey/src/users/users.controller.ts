@@ -1,6 +1,6 @@
-import { Controller, Get, Inject, UseGuards, Request, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Inject, UseGuards, Request } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Services } from 'src/enums/services.enum';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { LoggerService } from 'src/logs/logs.service';
@@ -59,25 +59,20 @@ export class UsersController {
    @UseGuards(AuthGuard)
    @Get()
    async findAll(@Request() req: any): Promise<Object | any> {
-      try {
-         // Generate a request id to log the request
-		   const requestId = uuidv4();
-         const userId = req.user.id;
+      // Generate a request id to log the request
+      const requestId = uuidv4();
+      const userId = req.user.id;
 
-         // Send de logs to logs microservice
-			await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'users.findAll', 'Find all user request received');
+      // Send de logs to logs microservice
+      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'users.findAll', 'Find all user request received');
 
-         // We convert the Observable to a Promise and catch the errors
-         return await firstValueFrom(
-            this.usersService.send({ cmd: 'users.findAll' }, {requestId, userId}).pipe(
-               catchError((error) => {
-                  throw new InternalServerErrorException(error.message || 'Error deleting task');
-               })
-            )
-         );
-
-      } catch (error) {
-         throw error;
-      }
+      // We convert the Observable to a Promise and catch the errors
+      return await firstValueFrom(
+         this.usersService.send({ cmd: 'users.findAll' }, {requestId, userId}).pipe(
+            catchError((error) => {
+               throw new RpcException(error.message || 'Error deleting task');
+            })
+         )
+      );
    }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Inject, HttpException, HttpStatus, BadRequestException, InternalServerErrorException, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, HttpStatus, Param } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { Services } from 'src/enums/services.enum';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
@@ -86,28 +86,23 @@ export class AuthController {
 	 */
 	@Post('register')
 	async create(@Body() createUserDto: CreateUserDto): Promise<any> {
-		try {
-			// Generate a request id to log the request
-			const requestId = uuidv4();
+		// Generate a request id to log the request
+		const requestId = uuidv4();
 
-			// Send de logs to logs microservice
-			await this.loggerService.logInfo(requestId, 'api-getawey', createUserDto.email, 'auth.create', 'Create user request received', { email: createUserDto.email });
+		// Send de logs to logs microservice
+		await this.loggerService.logInfo(requestId, 'api-getawey', createUserDto.email, 'auth.create', 'Create user request received', { email: createUserDto.email });
 
-			// Add request in Payload
-			const createRequestDto: CreateRequestDto = { createUserDto, requestId };
+		// Add request in Payload
+		const createRequestDto: CreateRequestDto = { createUserDto, requestId };
 
-			// We convert the Observable to a Promise and catch the errors
-			return await firstValueFrom(
-				this.authService.send('auth.create', createRequestDto).pipe(
-					catchError((error) => {
-						throw new BadRequestException(error.message || 'Error creating user');
-					})
-				)
-			);
-
-		} catch (error) {
-			throw error;
-		}
+		// We convert the Observable to a Promise and catch the errors
+		return await firstValueFrom(
+			this.authService.send('auth.create', createRequestDto).pipe(
+				catchError((error) => {
+					throw new RpcException(error.message || 'Error creating user');
+				})
+			)
+		);
 	}
 
 	/**
@@ -163,28 +158,23 @@ export class AuthController {
 	 */
 	@Post('login')
 	async login(@Body() loginUserDto: LoginUserDto): Promise<any> {
-		try {
-			// Generate a request id to log the request
-			const requestId = uuidv4();
+		// Generate a request id to log the request
+		const requestId = uuidv4();
 
-			// Send de logs to logs microservice
-			await this.loggerService.logInfo(requestId, 'api-getawey', loginUserDto.email, 'auth.login', 'Login request received', { email: loginUserDto.email });
+		// Send de logs to logs microservice
+		await this.loggerService.logInfo(requestId, 'api-getawey', loginUserDto.email, 'auth.login', 'Login request received', { email: loginUserDto.email });
 
-			// Add request in Payload
-			const loginRequestDto: LoginRequestDto = { loginUserDto, requestId };
+		// Add request in Payload
+		const loginRequestDto: LoginRequestDto = { loginUserDto, requestId };
 
-			// We convert the Observable to a Promise and catch the errors
-			return await firstValueFrom(
-				this.authService.send({ cmd: 'auth.login' }, loginRequestDto).pipe(
-					catchError((error) => {
-						throw new InternalServerErrorException(error.message || 'Error logging in user');
-					})
-				)
-			);
-			
-		} catch (error) {
-			throw error;
-		}
+		// We convert the Observable to a Promise and catch the errors
+		return await firstValueFrom(
+			this.authService.send({ cmd: 'auth.login' }, loginRequestDto).pipe(
+				catchError((error) => {
+					throw new RpcException(error.message || 'Error logging in user');
+				})
+			)
+		);
 	}
 
 	/**
@@ -235,7 +225,7 @@ export class AuthController {
 			return await firstValueFrom(
 				this.authService.send({ cmd: 'auth.verify-account' }, tokenRequestDto).pipe(
 					catchError((error) => {
-						throw new InternalServerErrorException(error.message || 'Error verifying account');
+						throw new RpcException(error.message || 'Error verifying account');
 					})
 				)
 			);

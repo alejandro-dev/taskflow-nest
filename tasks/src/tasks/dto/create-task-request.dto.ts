@@ -4,7 +4,6 @@ import { CreateTaskDto } from './create-task.dto';
 
 export class CreateTaskRequestDto {
    @IsNotEmpty()
-   @Type(() => CreateTaskDto)
    createTaskDto: CreateTaskDto;
 
    @IsString()

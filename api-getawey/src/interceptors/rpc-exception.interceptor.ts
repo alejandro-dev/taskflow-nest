@@ -1,4 +1,4 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, BadRequestException } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, HttpException } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { RpcException } from '@nestjs/microservices';
@@ -8,11 +8,12 @@ export class RpcExceptionInterceptor implements NestInterceptor {
    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
       return next.handle().pipe(
          map((response) => {
-            // Si la respuesta contiene un error, ajustamos el código de estado HTTP
+            // If the response contains an error, adjust the HTTP status code
             if (response && typeof response === 'object' && 'statusCode' in response && response.statusCode >= 400) {
                context.switchToHttp().getResponse().status(response.statusCode);
-               const { statusCode, ...rest } = response;
-               return rest;
+
+               const status = response.statusCode >= 500 ? 'error' : 'fail';
+               return { status, message: response.message || 'An error occurred' };
             }
             return response;
          }),
@@ -20,11 +21,16 @@ export class RpcExceptionInterceptor implements NestInterceptor {
             if (error instanceof RpcException) {
                const errorResponse = error.getError();
 
-               // Verificamos si errorResponse es un objeto antes de acceder a `status`
+               // Check if errorResponse is an object before accessing `status`
                const statusCode = typeof errorResponse === 'object' && 'status' in errorResponse ? errorResponse.status : 500;
-               const message = typeof errorResponse === 'object' && 'message' in errorResponse ? errorResponse.message : errorResponse;
 
-               return throwError(() => new BadRequestException({ statusCode, message }));
+               // Check if errorResponse is an object before accessing `message`
+               const message = typeof errorResponse === 'object' && 'message' in errorResponse ? errorResponse.message : 'Internal server error';
+
+               // Set the status based on the status code
+               const status = (statusCode as number) >= 500 ? 'error' : 'fail';
+
+               return throwError(() => new HttpException({ status, message }, (statusCode as number)));
             }
 
             return throwError(() => error);

@@ -4,7 +4,6 @@ import { UpdateTaskDto } from './update-task.dto';
 
 export class UpdateTaskRequestDto {
    @IsNotEmpty()
-   @Type(() => UpdateTaskDto)
    updateTaskDto: UpdateTaskDto;
 
    @IsString()
