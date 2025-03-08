@@ -600,7 +600,6 @@ export class TasksController {
       return await firstValueFrom(
          this.tasksService.send({ cmd: 'tasks.delete' }, { id, requestId, userId }).pipe(
             catchError((error) => {
-               console.log(error);
                throw new RpcException(error.message || 'Error deleting task');
             })
          )
@@ -785,7 +784,6 @@ export class TasksController {
       return await firstValueFrom(
          this.tasksService.send({ cmd: 'tasks.assign-user' }, payload).pipe(
             catchError((error) => {
-               console.log(error);
                throw new RpcException(error.message || 'Error author updated task');
             })
          )

@@ -94,7 +94,6 @@ export class UserRepository {
          return this.userModel.findByIdAndUpdate(id, { active: true, $unset: { token: "" } }).exec();
 
       } catch (error) {
-         console.log(error);
          throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);
       }
    }

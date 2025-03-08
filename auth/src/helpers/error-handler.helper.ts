@@ -27,6 +27,5 @@ export function extractErrorDetails(error: any): { status: HttpStatus; message: 
         message = error.message || message;
     }
 
-    console.log('holia');
     return { status: statusCode, message };
 }

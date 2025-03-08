@@ -49,7 +49,7 @@ export class UsersService {
          await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully', { message: `${ users.length} users were found` });
 
          // Return the list of users
-         return users;
+         return { status: 'success', users };
          
       } catch (error) {
          // Return the error to the caller and save the error in the logs

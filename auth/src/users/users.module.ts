@@ -9,12 +9,15 @@ import { Services } from 'src/enums/services.enum';
 import { envs } from 'src/config/envs';
 import { QueuesEnum } from 'src/enums/queues.enum';
 import { LoggerService } from 'src/logs/logs.service';
+import { UsersCacheService } from './users-cache.service';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
    controllers: [UsersController],
-   providers: [UsersService, UserRepository, LoggerService],
+   providers: [UsersService, UsersCacheService, UserRepository, LoggerService],
    imports: [
       MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),  
+      RedisModule,
       // Connect to RMQ with logs service
       ClientsModule.register([
          { 

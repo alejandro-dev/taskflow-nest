@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
-import { TasksService } from './tasks.service'; // Servicio donde consultas las tareas en la DB
 import { LoggerService } from 'src/logs/logs.service';
 import { logAndHandleError } from 'src/helpers/log-helper';
+import { UsersService } from './users.service';
 
 @Injectable()
-export class TasksCacheService {
-   constructor(@Inject('REDIS_CLIENT') private readonly redis: Redis, private readonly tasksService: TasksService, private readonly loggerService: LoggerService) { }
+export class UsersCacheService {
+   constructor(@Inject('REDIS_CLIENT') private readonly redis: Redis, private readonly usersService: UsersService, private readonly loggerService: LoggerService) { }
 
    /**
     * 
@@ -45,40 +45,41 @@ export class TasksCacheService {
     * }
     *
    */
-   async getTasksForUser(requestId: string, userId: string): Promise<any> {
+   async getUsers(requestId: string, userId: string): Promise<any> {
       try {
-         const redisKey = `AllTasks`;
+         const redisKey = `AllUsers`;
 
-         // Try to get tasks from Redis
-         const cachedTasks = await this.redis.get(redisKey);
+         // Try to get users from Redis
+         const cachedUsers = await this.redis.get(redisKey);
 
          // Task found in Redis, return them
-         if (cachedTasks) {
+         if (cachedUsers) {
+            console.log('cachedUsers', cachedUsers);
             // Send de logs to logs microservice and log the event
-            await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findAll', 'Task find all successfully (Redis)', { message: `${ JSON.parse(cachedTasks).tasks.length} tasks were found` });
+            await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully (Redis)', { message: `${JSON.parse(cachedUsers).users.length} users were found` });
 
-            // Return list of tasks
-            return JSON.parse(cachedTasks);
+            // Return list of users
+            return JSON.parse(cachedUsers);
          }
 
          // If not found in Redis, query the DB
-         const tasks = await this.tasksService.findAll(requestId, userId);
+         const users = await this.usersService.findAll(requestId, userId);
 
-         // Save tasks in Redis for 1 hour
-         await this.redis.set(redisKey, JSON.stringify(tasks), 'EX', 3600);
+         // Save users in Redis for 1 hour
+         await this.redis.set(redisKey, JSON.stringify(users), 'EX', 3600);
 
-         return tasks;
+         return users;
       
       } catch (error) {
          // Return the error to the caller and save the error in the logs
-         await logAndHandleError(error, this.loggerService, requestId, 'tasks', userId, 'tasks.findAll');
+         await logAndHandleError(error, this.loggerService, requestId, 'auth', userId, 'users.findAll');
       }
    }
 
    // Function to invalidate the cache (if necessary)
    async invalidateCache(): Promise<void> {
       // Define the Redis key
-      const redisKey = `AllTasks`;
+      const redisKey = `AllUsers`;
 
       // Delete the key from Redis
       await this.redis.del(redisKey); 

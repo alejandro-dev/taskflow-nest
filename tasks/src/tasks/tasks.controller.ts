@@ -96,7 +96,6 @@ export class TasksController {
          return  this.tasksService.create(createTaskDto, requestId);
 
       } catch (error) {
-         console.log(error);
          return error;
       }
    }
@@ -388,7 +387,6 @@ export class TasksController {
          return this.tasksService.update(updateTaskDto, requestId, userId);
 
       } catch (error) {
-         console.log(error);
          return error;
       }
    }

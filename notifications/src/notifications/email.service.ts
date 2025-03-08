@@ -34,8 +34,6 @@ export class EmailService {
       try {
          // Leer el archivo HTML
          const filePath = path.join(__dirname, '../../src/notifications/templates', template);
-         console.log('Buscando template en:', filePath);
-
          let html = fs.readFileSync(filePath, 'utf-8');
 
          // Reemplazar los marcadores en el HTML (por ejemplo, {{name}})
@@ -52,7 +50,6 @@ export class EmailService {
          };
 
          const info = await this.transporter.sendMail(mailOptions);
-         console.log('Correo enviado:', info.response);
           
       } catch (error) {
          console.error('Error al enviar el correo:', error);

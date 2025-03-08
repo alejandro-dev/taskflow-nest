@@ -2,10 +2,11 @@ import { Controller, HttpStatus } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { handleRpcError } from 'src/filters/error-handler.filter';
 import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
+import { UsersCacheService } from './users-cache.service';
 
 @Controller()
 export class UsersController {
-   constructor(private readonly usersService: UsersService) {}
+   constructor(private readonly usersService: UsersService, private readonly usersCacheService: UsersCacheService) {}
 
    /**
      * 
@@ -55,8 +56,7 @@ export class UsersController {
          const { requestId, userId } = payloadBody;
 
          // Find all users
-         const users = await this.usersService.findAll(requestId, userId);
-         return { status: 'success', users };
+         return await this.usersCacheService.getUsers(requestId, userId);
 
       } catch (error) {
          handleRpcError(error);
