@@ -8,7 +8,6 @@ import { handleRpcError } from 'src/filters/error-handler.filter';
 import Redis from 'ioredis';
 import { LoginRequestDto } from './dto/login-request.dto';
 import { LoggerService } from 'src/logs/logs.service';
-import { extractErrorDetails } from 'src/helpers/error-handler.helper';
 import { logAndHandleError } from '../helpers/log-helper';
 import { TokenRequestDto } from './dto/token-request.dto';
 import { CreateRequestDto } from './dto/create-request.dto';
@@ -156,6 +155,9 @@ export class AuthService {
 
 			// Send de logs to logs microservice and log the event
 			await this.loggerService.logInfo(requestId, 'auth', user.id, 'auth.verify-account', 'Account verified', { userId: user.id, token: token });
+
+			// Delete cache listUsers from Redis
+			await this.redis.del(`AllUsers`);
 			
 			return { status: 'success', message: 'Account verified' };
 

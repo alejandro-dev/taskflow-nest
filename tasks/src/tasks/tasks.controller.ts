@@ -145,8 +145,8 @@ export class TasksController {
          // Get requestId and userId from the payload
          const { requestId, userId } = payloadBody;
          
-         // Check the tasks in Redis, if not found, query the DB
-         return this.tasksCacheService.getTasksForUser(requestId, userId);
+         // Check all tasks in Redis, if not found, query the DB
+         return this.tasksCacheService.findAllRedis(requestId, userId);
 
       } catch (error) {
          return error;
@@ -255,7 +255,8 @@ export class TasksController {
          // Get authorId, requestId and userId from the payload
          const { authorId, requestId, userId } = payloadBody;
 
-         return this.tasksService.findByAuthorId(authorId, requestId, userId);
+         // Check all tasks from author in Redis, if not found, query the DB
+         return this.tasksCacheService.findByAuthorIdRedis(authorId, requestId, userId);
 
       } catch (error) {
          return error;
@@ -314,7 +315,8 @@ export class TasksController {
          // Get assignedId, requestId and userId from the payload
          const { assignedId, requestId, userId } = payloadBody;
 
-         return this.tasksService.findByAssignedId(assignedId, requestId, userId);
+         // Check all tasks from user assigned in Redis, if not found, query the DB
+         return this.tasksCacheService.findByAssignedIdRedis(assignedId, requestId, userId);
 
       } catch (error) {
          return error;

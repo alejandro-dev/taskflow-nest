@@ -9,6 +9,7 @@ import { LoggerService } from 'src/logs/logs.service';
 import { logAndHandleError } from 'src/helpers/log-helper';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UUID } from 'crypto';
+import { RedisKeys } from 'src/enums/redis-keys.enum';
 
 @Injectable()
 export class TasksService {
@@ -91,6 +92,15 @@ export class TasksService {
          
          // Send de logs to logs microservice and log the event
 			await this.loggerService.logInfo(requestId, 'tasks', createTaskDto.authorId, 'tasks.create', 'Task created successfully', { ...task });
+
+         // Delete cache ALLTASKS from Redis
+         await this.redis.del(RedisKeys.ALLTASKS);
+
+         // Delete cache AUTHORTASKS from Redis
+         await this.redis.del(`AUTHORTASKS:${createTaskDto.authorId}`);
+
+         // Delete cache ASSIGNEDTASK from Redis
+         await this.redis.del(`ASSIGNEDTASK:${createTaskDto.assignedUserId}`);
 
          return { status: 'success', task, message: 'Task created successfully' };
 
@@ -269,7 +279,7 @@ export class TasksService {
          if(!tasks) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
          // Send de logs to logs microservice and log the event
-         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by author #${authorId} find all successfully`, { tasks } );
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by author #${authorId} find all successfully`, { message: `${ tasks.length} tasks were found` } );
 
          return { status: 'success', tasks };
 
@@ -336,7 +346,7 @@ export class TasksService {
          if(!tasks) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
          // Send de logs to logs microservice and log the event
-         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by user assigned #${assignedUserId} find all successfully`, { tasks } );
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by user assigned #${assignedUserId} find all successfully`, { message: `${ tasks.length} tasks were found` } );
 
          return { status: 'success', tasks };
 
@@ -423,6 +433,15 @@ export class TasksService {
          // Send de logs to logs microservice and log the event
          await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.task', `Task by id #${updateTaskDto.id} is updated successfully`, { ...taskUpdated } );
 
+         // Delete cache ALLTASKS from Redis
+         await this.redis.del(RedisKeys.ALLTASKS);
+
+         // Delete cache AUTHORTASKS from Redis
+         await this.redis.del(`AUTHORTASKS:${updateTaskDto.authorId}`);
+
+         // Delete cache ASSIGNEDTASK from Redis
+         await this.redis.del(`ASSIGNEDTASK:${updateTaskDto.assignedUserId}`);
+
          return { status: 'success', task: taskUpdated, message: 'Task updated successfully' };
 
       } catch (error) {
@@ -488,6 +507,15 @@ export class TasksService {
 
          // Send de logs to logs microservice and log the event
          await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.delete', `Task by id #${id} is deleted successfully`, { ...task } );
+
+         // Delete cache ALLTASKS from Redis
+         await this.redis.del(RedisKeys.ALLTASKS);
+
+         // Delete cache AUTHORTASKS from Redis
+         await this.redis.del(`AUTHORTASKS:${task.authorId}`);
+
+         // Delete cache ASSIGNEDTASK from Redis
+         await this.redis.del(`ASSIGNEDTASK:${task.assignedUserId}`);
 
          return { status: 'success', message: `The task #${id} has been deleted` };
 
@@ -568,6 +596,15 @@ export class TasksService {
 
          // Send de logs to logs microservice and log the event
          await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.change-status', `Task by id #${changeStatusDto.id} stastus updated successfully`, { ...taskUpdated } );
+
+         // Delete cache ALLTASKS from Redis
+         await this.redis.del(RedisKeys.ALLTASKS);
+
+         // Delete cache AUTHORTASKS from Redis
+         await this.redis.del(`AUTHORTASKS:${taskUpdated.authorId}`);
+
+         // Delete cache ASSIGNEDTASK from Redis
+         await this.redis.del(`ASSIGNEDTASK:${taskUpdated.assignedUserId}`);
 
          return { status: 'success', task: taskUpdated, message: 'Task stastus updated successfully' };
 
@@ -658,6 +695,15 @@ export class TasksService {
          
          // Send de logs to logs microservice and log the event
          await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.assign-user', `Task by id #${id} assigned user successfully`, { ...taskUpdated } );
+
+         // Delete cache ALLTASKS from Redis
+         await this.redis.del(RedisKeys.ALLTASKS);
+
+         // Delete cache AUTHORTASKS from Redis
+         await this.redis.del(`AUTHORTASKS:${taskUpdated.authorId}`);
+
+         // Delete cache ASSIGNEDTASK from Redis
+         await this.redis.del(`ASSIGNEDTASK:${taskUpdated.assignedUserId}`);
 
          return { status: 'success', task: taskUpdated, message: 'Task author updated successfully' };
 

@@ -8,7 +8,7 @@ import { LoggerService } from 'src/logs/logs.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Services } from 'src/enums/services.enum';
 import { envs } from 'src/config/envs';
-import { QueuesEnum } from 'src/enums/queuesEnum';
+import { QueuesEnum } from 'src/enums/queues.enum';
 
 @Module({
    controllers: [TasksController],

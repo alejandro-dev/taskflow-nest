@@ -5,7 +5,7 @@ import { RpcExceptionFilter } from './tasks/filters/exception.filter';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { QueuesEnum } from './enums/queuesEnum';
+import { QueuesEnum } from './enums/queues.enum';
 
 async function bootstrap() {
    const app = await NestFactory.createMicroservice<MicroserviceOptions>(

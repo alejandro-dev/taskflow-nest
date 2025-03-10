@@ -75,13 +75,4 @@ export class UsersCacheService {
          await logAndHandleError(error, this.loggerService, requestId, 'auth', userId, 'users.findAll');
       }
    }
-
-   // Function to invalidate the cache (if necessary)
-   async invalidateCache(): Promise<void> {
-      // Define the Redis key
-      const redisKey = `AllUsers`;
-
-      // Delete the key from Redis
-      await this.redis.del(redisKey); 
-   }
 }
