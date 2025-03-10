@@ -151,6 +151,51 @@ export class TasksCacheService {
       }
    }
 
+   /**
+    * 
+    * @returns {Object} The response contain the operation status and the task
+    * 
+    * @description Get tasks assigned to user from Redis, if not found, query the DB
+    * @param {Object} payloadBody - The author id, request id and user id
+    * @param {string} payloadBody.assignedId - The assigned id
+    * @param {string} payloadBody.requestId - The request id
+    * @param {string} payloadBody.userId - The user id
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "task": {
+    *      "id": "1234567890abcdef12345678",
+    *      "title": "Task title",
+    *      "description": "Task description",
+    *      "assignedTo": "1234567890abcdef12345678",
+    *      "dueDate": "2025-02-25T00:00:00.000Z",
+    *      "status": "pending",
+    *      "priority": "media",
+    *      "createdAt": "2025-02-25T00:00:00.000Z",
+    *      "updatedAt": "2025-02-25T00:00:00.000Z"
+    *    }
+    * }
+    *  
+    * @example
+    * // Not found response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "Task not found"
+    * }  
+    *  
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    * 
+    */
    async findByAssignedIdRedis(assignedId: string, requestId: string, userId: string): Promise<any> {
       try {
          const redisKey = `${RedisKeys.ASSIGNEDTASK}:${assignedId}`;

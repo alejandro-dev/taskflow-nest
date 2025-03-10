@@ -97,10 +97,10 @@ export class TasksService {
          await this.redis.del(RedisKeys.ALLTASKS);
 
          // Delete cache AUTHORTASKS from Redis
-         await this.redis.del(`AUTHORTASKS:${createTaskDto.authorId}`);
+         await this.redis.del(`${RedisKeys.AUTHORTASKS}:${createTaskDto.authorId}`);
 
          // Delete cache ASSIGNEDTASK from Redis
-         await this.redis.del(`ASSIGNEDTASK:${createTaskDto.assignedUserId}`);
+         await this.redis.del(`${RedisKeys.ASSIGNEDTASK}:${createTaskDto.assignedUserId}`);
 
          return { status: 'success', task, message: 'Task created successfully' };
 
@@ -437,10 +437,10 @@ export class TasksService {
          await this.redis.del(RedisKeys.ALLTASKS);
 
          // Delete cache AUTHORTASKS from Redis
-         await this.redis.del(`AUTHORTASKS:${updateTaskDto.authorId}`);
+         await this.redis.del(`${RedisKeys.AUTHORTASKS}:${updateTaskDto.authorId}`);
 
          // Delete cache ASSIGNEDTASK from Redis
-         await this.redis.del(`ASSIGNEDTASK:${updateTaskDto.assignedUserId}`);
+         await this.redis.del(`${RedisKeys.ASSIGNEDTASK}:${updateTaskDto.assignedUserId}`);
 
          return { status: 'success', task: taskUpdated, message: 'Task updated successfully' };
 
@@ -512,10 +512,10 @@ export class TasksService {
          await this.redis.del(RedisKeys.ALLTASKS);
 
          // Delete cache AUTHORTASKS from Redis
-         await this.redis.del(`AUTHORTASKS:${task.authorId}`);
+         await this.redis.del(`${RedisKeys.AUTHORTASKS}:${task.authorId}`);
 
          // Delete cache ASSIGNEDTASK from Redis
-         await this.redis.del(`ASSIGNEDTASK:${task.assignedUserId}`);
+         await this.redis.del(`${RedisKeys.ASSIGNEDTASK}:${task.assignedUserId}`);
 
          return { status: 'success', message: `The task #${id} has been deleted` };
 
@@ -601,10 +601,10 @@ export class TasksService {
          await this.redis.del(RedisKeys.ALLTASKS);
 
          // Delete cache AUTHORTASKS from Redis
-         await this.redis.del(`AUTHORTASKS:${taskUpdated.authorId}`);
+         await this.redis.del(`${RedisKeys.AUTHORTASKS}:${taskUpdated.authorId}`);
 
          // Delete cache ASSIGNEDTASK from Redis
-         await this.redis.del(`ASSIGNEDTASK:${taskUpdated.assignedUserId}`);
+         await this.redis.del(`${RedisKeys.ASSIGNEDTASK}:${taskUpdated.assignedUserId}`);
 
          return { status: 'success', task: taskUpdated, message: 'Task stastus updated successfully' };
 
@@ -700,10 +700,10 @@ export class TasksService {
          await this.redis.del(RedisKeys.ALLTASKS);
 
          // Delete cache AUTHORTASKS from Redis
-         await this.redis.del(`AUTHORTASKS:${taskUpdated.authorId}`);
+         await this.redis.del(`${RedisKeys.AUTHORTASKS}:${taskUpdated.authorId}`);
 
          // Delete cache ASSIGNEDTASK from Redis
-         await this.redis.del(`ASSIGNEDTASK:${taskUpdated.assignedUserId}`);
+         await this.redis.del(`${RedisKeys.ASSIGNEDTASK}:${taskUpdated.assignedUserId}`);
 
          return { status: 'success', task: taskUpdated, message: 'Task author updated successfully' };
 
