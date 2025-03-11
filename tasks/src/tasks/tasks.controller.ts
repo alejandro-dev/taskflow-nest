@@ -438,7 +438,6 @@ export class TasksController {
       }
    }
 
-
    /**
     * 
     * @returns {Object} The response contain the operation status and the updated task

@@ -59,13 +59,21 @@ export class UserRepository {
 
    /**
     * 
-    * @returns {Promise<User[]>} The list of users
     * @description Get all users
+    * @param {string[]} select - The values selected of the users to query
+    * @param {number} limit - The limit of the users
+    * @param {number} skip - The skip of the users
+    * @returns {Promise<User[]>} The list of users
     *
     */
-   async findAll(select: string[]): Promise<User[]> {
+   async findAll(select: string[], limit: number, skip: number): Promise<User[]> {
       try {
-         return this.userModel.find({ active: true }).select(select).exec();
+         const query = this.userModel.find({ active: true }).select(select);
+
+         // If limit and skip are provided, add them to the query
+         if(limit > 0 && skip >=0 ) query.skip(skip).limit(limit);
+
+         return query.exec();
 
       } catch (error) {
          throw new HttpException('Custom error message', HttpStatus.INTERNAL_SERVER_ERROR);

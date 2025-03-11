@@ -3,6 +3,7 @@ import { UsersService } from './users.service';
 import { handleRpcError } from 'src/filters/error-handler.filter';
 import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { UsersCacheService } from './users-cache.service';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Controller()
 export class UsersController {
@@ -50,13 +51,16 @@ export class UsersController {
     * }
     */
    @MessagePattern({ cmd: 'users.findAll' })
-   async findAll(@Payload() payloadBody: { [key: string]: string }): Promise<Object | any> {
+   async findAll(@Payload() payloadBody: { [key: string]: string }, @Payload() paginationDto: PaginationDto): Promise<Object | any> {
       try {
-         // Get requestId and userId from the payload
+         // Get requestId and userId from the payloadBody
          const { requestId, userId } = payloadBody;
 
+         // Get limit and page from the paginationDto
+         const { limit, page } = paginationDto;
+
          // Find all users
-         return await this.usersCacheService.getUsers(requestId, userId);
+         return await this.usersCacheService.getUsers(requestId, userId, limit, page);
 
       } catch (error) {
          handleRpcError(error);

@@ -45,16 +45,15 @@ export class UsersCacheService {
     * }
     *
    */
-   async getUsers(requestId: string, userId: string): Promise<any> {
-      try {
-         const redisKey = `AllUsers`;
+   async getUsers(requestId: string, userId: string, limit: number = 0, page: number = 0): Promise<any> {
+      try { 
+         let redisKey = limit === 0 ? `AllUsers` : `AllUsers:limit=${limit}:page=${page}`;
 
          // Try to get users from Redis
          const cachedUsers = await this.redis.get(redisKey);
 
          // Task found in Redis, return them
          if (cachedUsers) {
-            console.log('cachedUsers', cachedUsers);
             // Send de logs to logs microservice and log the event
             await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully (Redis)', { message: `${JSON.parse(cachedUsers).users.length} users were found` });
 
@@ -63,7 +62,7 @@ export class UsersCacheService {
          }
 
          // If not found in Redis, query the DB
-         const users = await this.usersService.findAll(requestId, userId);
+         const users = await this.usersService.findAll(requestId, userId, limit, page);
 
          // Save users in Redis for 1 hour
          await this.redis.set(redisKey, JSON.stringify(users), 'EX', 3600);

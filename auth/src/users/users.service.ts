@@ -40,13 +40,16 @@ export class UsersService {
     * }
     *
     */
-   async findAll(requestId: string, userId: string): Promise<Object | any> {
+   async findAll(requestId: string, userId: string, limit: number, page: number): Promise<Object | any> {
       try {   
+         // Calculate the offset
+         const skip = page > 0 ? ((page + 1) - 1) * limit : 0;
+         
          // Find all users
-         const users = await this.userRepository.findAll(['id', 'email']); 
+         const users = await this.userRepository.findAll(['id', 'email'], limit, skip); 
 
          // Send de logs to logs microservice and log the event
-         await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully', { message: `${ users.length} users were found` });
+         await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully', { message: `${ users.length} users were found`, filters: { limit, page } });
 
          // Return the list of users
          return { status: 'success', users };
