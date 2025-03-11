@@ -18,6 +18,7 @@ import { UpdateTaskRequestDto } from './dto/update-task-request.dto';
 import { ChangeStatusRequestDto } from './dto/change-status-request.dto';
 import { AssignUserRequestDto } from './dto/assign-user-request.dto';
 import { UUID } from 'crypto';
+import { UserExistGuard } from 'src/guards/user-exist.guard';
 
 @Controller('tasks')
 export class TasksController {
@@ -341,7 +342,7 @@ export class TasksController {
     *    "message": "Internal Server Error"
     * }
     */
-   @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
+   @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard, UserExistGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Get('author/:id')
    async findByAuthorId(@Request() req: any, @Param('id') authorId: string): Promise<Object> {
@@ -424,7 +425,7 @@ export class TasksController {
     * }
     * 
     */
-   @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard)
+   @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard, UserExistGuard)
    @Get('assigned/:id')
    async findByAssignedId(@Request() req: any, @Param('id') assignedId: string): Promise<Object> {
       // Generate a request id to log the request

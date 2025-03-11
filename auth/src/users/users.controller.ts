@@ -63,6 +63,42 @@ export class UsersController {
       }
    }
 
+   /**
+    * 
+    * @param id - The id of the user
+    * @returns {Promise<Object | any>} The response contain the operation status and the user
+    * 
+    * @messagePattern users.findById
+    * @description Get a user by id
+    * 
+    * @example
+    * // Example success response
+    * statusCode: 200
+    * {
+    *    "status": "success",
+    *    "user": {
+    *      "id": "1234567890abcdef12345678",
+    *      "email": "alex@gmail.com"
+    *    }
+    * }
+    * 
+    * @example
+    * // Not found response
+    * statusCode: 404
+    * {
+    *    "status": "fail",
+    *    "message": "User not found"    
+    * }
+    *
+    * @example
+    * // Internal Server Error response
+    * statusCode: 500
+    * {
+    *    "status": "error",
+    *    "message": "Internal Server Error"
+    * }
+    *
+    */
    @MessagePattern({ cmd: 'users.findById' })
    async findById(@Payload('id') id: string): Promise<Object | any> {
       try {

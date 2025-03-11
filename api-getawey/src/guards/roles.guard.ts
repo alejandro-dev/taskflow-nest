@@ -3,6 +3,13 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { RolesEnum } from '../enums/roles.enum';
 
+/**
+ * 
+ * RolesGuard
+ * 
+ * @description Guard to check if the user has the required role
+ * @returns {boolean} True if the user has the required role, false otherwise
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
    constructor(private reflector: Reflector) {}

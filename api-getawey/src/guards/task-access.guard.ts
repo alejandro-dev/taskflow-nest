@@ -3,6 +3,13 @@ import { ClientProxy } from '@nestjs/microservices';
 import { catchError, firstValueFrom } from 'rxjs';
 import { Services } from 'src/enums/services.enum';
 
+/**
+ * 
+ * TaskAccessGuard
+ * 
+ * @description Guard to check if the user has access to the task
+ * @returns {boolean} True if the user has access to the task, false otherwise
+ */
 @Injectable()
 export class TaskAccessGuard implements CanActivate {
 	constructor(@Inject(Services.TASKS_SERVICE) private readonly tasksService: ClientProxy) {}
@@ -13,23 +20,23 @@ export class TaskAccessGuard implements CanActivate {
 		const user = request.user; 
 		const taskId = request.params.id; 
 
-        // If dont haver user return throw
+      // If dont haver user return throw
 		if (!user) throw new HttpException({ status: "fail", message: "Unauthorized" }, HttpStatus.FORBIDDEN);
 
 		// Admin can access all tasks
 		if (user.role === 'admin') return true;
 
 		// Get the task from the task microservice
-        const response = await firstValueFrom(
-            this.tasksService.send({ cmd: 'tasks.findOne' }, { id: taskId }).pipe(
-                catchError((error) => {
-                    throw new InternalServerErrorException(error.message || 'Error getting task');
-                })
-            )
-        );
+		const response = await firstValueFrom(
+			this.tasksService.send({ cmd: 'tasks.findOne' }, { id: taskId }).pipe(
+					catchError((error) => {
+						throw new InternalServerErrorException(error.message || 'Error getting task');
+					})
+			)
+		);
 
-        // Access to task
-        const task = response.task;
+		// Access to task
+		const task = response.task;
 
         // If the task does not exist, throw an exception
 		if (!task) throw new HttpException({ status: "fail", message: "Task not found" }, HttpStatus.NOT_FOUND);
