@@ -10,6 +10,7 @@ import { logAndHandleError } from 'src/helpers/log-helper';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UUID } from 'crypto';
 import { RedisKeys } from 'src/enums/redis-keys.enum';
+import { filter } from 'rxjs';
 
 @Injectable()
 export class TasksService {
@@ -115,6 +116,9 @@ export class TasksService {
     * @returns {Promise<Object | any>} The response contain the operation status and the list of tasks
     * @param requestId - The request id
     * @param userId - The user id
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
+    * 
     * @messagePattern tasks.findAll
     * @description Get all tasks
     * 
@@ -148,12 +152,15 @@ export class TasksService {
     * }
     * 
     */
-   async findAll(requestId: string, userId: string): Promise<Object | any> {
+   async findAll(requestId: string, userId: string, limit: number = 0, page: number = 0): Promise<Object | any> {
       try {
-         const tasks = await this.prisma.task.findMany();
+         // Calculate the offset
+         const skip = page > 0 ? ((page + 1) - 1) * limit : 0;
+
+         const tasks = await this.prisma.task.findMany({skip, take: limit});
 
          // Send de logs to logs microservice and log the event
-         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findAll', 'Task find all successfully', { message: `${ tasks.length} tasks were found` });
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findAll', 'Task find all successfully', { message: `${ tasks.length} tasks were found`, filter: { limit, page } });
 
          return { status: 'success', tasks };
 
@@ -227,10 +234,13 @@ export class TasksService {
     * @returns {Object} The response contain the operation status and the task
     * 
     * @description Get a task by author id
+    * 
     * @param {Object} payloadBody - The author id, request id and user id
     * @param {string} payloadBody.authorId - The author id
     * @param {string} payloadBody.requestId - The request id
     * @param {string} payloadBody.userId - The user id
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
     * 
     * @example
     * // Example success response
@@ -267,19 +277,24 @@ export class TasksService {
     * }
     * 
     */
-   async findByAuthorId(authorId: string, requestId: string, userId: string): Promise<Object | any> {
+   async findByAuthorId(authorId: string, requestId: string, userId: string, limit: number = 0, page: number = 0): Promise<Object | any> {
       try {
+         // Calculate the offset
+         const skip = page > 0 ? ((page + 1) - 1) * limit : 0;
+
          const tasks = await this.prisma.task.findMany({
             where: {
                authorId
-            }
+            },
+            skip,
+            take: limit
          });
 
          // If the task doesn't exist, throw an error
          if(!tasks) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
          // Send de logs to logs microservice and log the event
-         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by author #${authorId} find all successfully`, { message: `${ tasks.length} tasks were found` } );
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by author #${authorId} find all successfully`, { message: `${ tasks.length} tasks were found`, filter: { limit, page } } );
 
          return { status: 'success', tasks };
 
@@ -294,10 +309,13 @@ export class TasksService {
     * @returns {Object} The response contain the operation status and the task
     * 
     * @description Get a task by assigned id
+    * 
     * @param {Object} payloadBody - The author id, request id and user id
     * @param {string} payloadBody.assignedId - The assigned id
     * @param {string} payloadBody.requestId - The request id
     * @param {string} payloadBody.userId - The user id
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
     * 
     * @example
     * // Example success response
@@ -334,19 +352,24 @@ export class TasksService {
     * }
     * 
     */
-   async findByAssignedId(assignedUserId: string, requestId: string, userId: string): Promise<Object | any> {
+   async findByAssignedId(assignedUserId: string, requestId: string, userId: string, limit: number = 0, page: number = 0): Promise<Object | any> {
       try {
+         // Calculate the offset
+         const skip = page > 0 ? ((page + 1) - 1) * limit : 0;
+
          const tasks = await this.prisma.task.findMany({
             where: {
                assignedUserId
-            }
+            },
+            skip,
+            take: limit
          });
 
          // If the task doesn't exist, throw an error
          if(!tasks) throw new RpcException({ message: 'Task not found', status: HttpStatus.NOT_FOUND });
 
          // Send de logs to logs microservice and log the event
-         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by user assigned #${assignedUserId} find all successfully`, { message: `${ tasks.length} tasks were found` } );
+         await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by user assigned #${assignedUserId} find all successfully`, { message: `${ tasks.length} tasks were found`, filter: { limit, page } } );
 
          return { status: 'success', tasks };
 

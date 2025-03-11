@@ -27,6 +27,9 @@ export class UsersController {
     * @param {any} payloadBody - The request id and user id
     * @param {string} payloadBody.requestId - The request id
     * @param {string} payloadBody.userId - The user id
+    * @param {PaginationDto} - The pagination dto
+    * @param {number} PaginationDto.limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} PaginationDto.page -  The current page number for pagination. The first page is 0.
     * @description Get all users
     * 
     * @example
@@ -51,13 +54,13 @@ export class UsersController {
     * }
     */
    @MessagePattern({ cmd: 'users.findAll' })
-   async findAll(@Payload() payloadBody: { [key: string]: string }, @Payload() paginationDto: PaginationDto): Promise<Object | any> {
+   async findAll(@Payload() payload: any): Promise<Object | any> {
       try {
+         // Get limit, page and payloadBody from the payload
+         const { limit, page, ...payloadBody } = payload;
+
          // Get requestId and userId from the payloadBody
          const { requestId, userId } = payloadBody;
-
-         // Get limit and page from the paginationDto
-         const { limit, page } = paginationDto;
 
          // Find all users
          return await this.usersCacheService.getUsers(requestId, userId, limit, page);

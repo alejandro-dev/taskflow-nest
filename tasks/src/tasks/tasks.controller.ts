@@ -106,6 +106,9 @@ export class TasksController {
     * @param {Object} payloadBody - The request id and user id
     * @param {string} payloadBody.requestId - The request id
     * @param {string} payloadBody.userId - The user id
+    * @param {PaginationDto} - The pagination dto
+    * @param {number} PaginationDto.limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} PaginationDto.page -  The current page number for pagination. The first page is 0.
     * @messagePattern tasks.findAll
     * @description Get all tasks
     * 
@@ -140,13 +143,16 @@ export class TasksController {
     * 
     */
    @MessagePattern({ cmd: 'tasks.findAll' })
-   findAll(@Payload() payloadBody: { [key: string]: string }): Object {
+   async findAll(@Payload() payload: any): Promise<Object | any> {
       try {
+         // Get limit, page and payloadBody from the payload
+         const { limit, page, ...payloadBody } = payload;
+
          // Get requestId and userId from the payload
          const { requestId, userId } = payloadBody;
          
          // Check all tasks in Redis, if not found, query the DB
-         return this.tasksCacheService.findAllRedis(requestId, userId);
+         return await this.tasksCacheService.findAllRedis(requestId, userId, limit, page);
 
       } catch (error) {
          return error;
@@ -213,7 +219,10 @@ export class TasksController {
     * @param {string} payloadBody.authorId - The author id
     * @param {string} payloadBody.requestId - The request id
     * @param {string} payloadBody.userId - The user id
-    * 
+    * @param {PaginationDto} - The pagination dto
+    * @param {number} PaginationDto.limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} PaginationDto.page -  The current page number for pagination. The first page is 0.
+    *  
     * @example
     * // Example success response
     * statusCode: 200
@@ -250,13 +259,16 @@ export class TasksController {
     * 
     */
    @MessagePattern({ cmd: 'tasks.findByAuthorId' })
-   findByAuthorId(@Payload() payloadBody: { [key: string]: string }): Object {
+   findByAuthorId(@Payload() payload: any): Object {
       try {
+         // Get limit, page and payloadBody from the payload
+         const { limit, page, ...payloadBody } = payload;
+
          // Get authorId, requestId and userId from the payload
          const { authorId, requestId, userId } = payloadBody;
 
          // Check all tasks from author in Redis, if not found, query the DB
-         return this.tasksCacheService.findByAuthorIdRedis(authorId, requestId, userId);
+         return this.tasksCacheService.findByAuthorIdRedis(authorId, requestId, userId, limit, page);
 
       } catch (error) {
          return error;
@@ -273,7 +285,10 @@ export class TasksController {
     * @param {string} payloadBody.assignedId - The assigned id
     * @param {string} payloadBody.requestId - The request id
     * @param {string} payloadBody.userId - The user id
-    * 
+    * @param {PaginationDto} - The pagination dto
+    * @param {number} PaginationDto.limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} PaginationDto.page -  The current page number for pagination. The first page is 0.
+    *  
     * @example
     * // Example success response
     * statusCode: 200
@@ -310,13 +325,16 @@ export class TasksController {
     * 
     */
    @MessagePattern({ cmd: 'tasks.findByAssignedId' })
-   findByAssignedId(@Payload() payloadBody: { [key: string]: string }): Object {
+   findByAssignedId(@Payload() payload: any): Object {
       try {
+         // Get limit, page and payloadBody from the payload
+         const { limit, page, ...payloadBody } = payload;
+
          // Get assignedId, requestId and userId from the payload
          const { assignedId, requestId, userId } = payloadBody;
 
          // Check all tasks from user assigned in Redis, if not found, query the DB
-         return this.tasksCacheService.findByAssignedIdRedis(assignedId, requestId, userId);
+         return this.tasksCacheService.findByAssignedIdRedis(assignedId, requestId, userId, limit, page);
 
       } catch (error) {
          return error;

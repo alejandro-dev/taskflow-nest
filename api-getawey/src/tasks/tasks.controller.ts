@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, Put, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, Put, UseGuards, Request, Query } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -19,6 +19,7 @@ import { ChangeStatusRequestDto } from './dto/change-status-request.dto';
 import { AssignUserRequestDto } from './dto/assign-user-request.dto';
 import { UUID } from 'crypto';
 import { UserExistGuard } from 'src/guards/user-exist.guard';
+import { PaginationDto } from './dto/pagination.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -138,7 +139,11 @@ export class TasksController {
    /**
     * 
     * @route GET /tasks
+    * 
     * @param {any} req  The request object
+    * @param {number} limit - The number of tasks to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
+    * 
     * @description Get all tasks
     * @returns {Promise<Object>} The response contain the operation status and the tasks
     * 
@@ -186,18 +191,19 @@ export class TasksController {
    @UseGuards(AuthGuard, RolesGuard)
    @Roles(RolesEnum.ADMIN)
    @Get()
-   async findAll(@Request() req: any): Promise<Object> {
+   async findAll(@Request() req: any, @Query('limit') limit: number, @Query('page') page: number): Promise<Object> {
       // Generate a request id to log the request
       const requestId = uuidv4();
       const userId = req.user.id;
 
       // Send de logs to logs microservice
-      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findAll', 'Find all task request received');
+      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findAll', 'Find all task request received', { filter: { limit, page } });
 
       // We convert the Observable to a Promise and catch the errors
       return await firstValueFrom(
-         this.tasksService.send({ cmd: 'tasks.findAll' }, { requestId, userId }).pipe(
+         this.tasksService.send({ cmd: 'tasks.findAll' }, { requestId, userId, limit, page }).pipe(
             catchError((error) => {
+               console.log(error);
                throw new RpcException(error.message || 'Error getting tasks');
             })
          )
@@ -345,17 +351,17 @@ export class TasksController {
    @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard, UserExistGuard)
    @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Get('author/:id')
-   async findByAuthorId(@Request() req: any, @Param('id') authorId: string): Promise<Object> {
+   async findByAuthorId(@Request() req: any, @Query('limit') limit: number, @Query('page') page: number, @Param('id') authorId: string): Promise<Object> {
       // Generate a request id to log the request
       const requestId = uuidv4();
       const userId = req.user.id;
 
       // Send de logs to logs microservice
-      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findByAuthorId', 'Find author tasks request received', { authorId });
+      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findByAuthorId', 'Find author tasks request received', { authorId, filter: { limit, page } });
 
       // We convert the Observable to a Promise and catch the errors
       return await firstValueFrom(
-         this.tasksService.send({ cmd: 'tasks.findByAuthorId' }, { authorId, requestId, userId }).pipe(
+         this.tasksService.send({ cmd: 'tasks.findByAuthorId' }, { authorId, requestId, userId, limit, page }).pipe(
             catchError((error) => {
                throw new RpcException(error.message || 'Error getting task');
             })
@@ -427,17 +433,17 @@ export class TasksController {
     */
    @UseGuards(AuthGuard, RolesGuard, TaskAccessGuard, UserExistGuard)
    @Get('assigned/:id')
-   async findByAssignedId(@Request() req: any, @Param('id') assignedId: string): Promise<Object> {
+   async findByAssignedId(@Request() req: any, @Query('limit') limit: number, @Query('page') page: number, @Param('id') assignedId: string): Promise<Object> {
       // Generate a request id to log the request
       const requestId = uuidv4();
       const userId = req.user.id;
 
       // Send de logs to logs microservice
-      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findByAssignedId', 'Find user assigned tasks request received', { assignedId });
+      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'tasks.findByAssignedId', 'Find user assigned tasks request received', { assignedId, filter: { limit, page } });
 
       // We convert the Observable to a Promise and catch the errors
       return await firstValueFrom(
-         this.tasksService.send({ cmd: 'tasks.findByAssignedId' }, { assignedId, requestId, userId }).pipe(
+         this.tasksService.send({ cmd: 'tasks.findByAssignedId' }, { assignedId, requestId, userId, limit, page }).pipe(
             catchError((error) => {
                throw new RpcException(error.message || 'Error getting task');
             })

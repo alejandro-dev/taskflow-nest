@@ -24,6 +24,8 @@ export class UsersController {
     * @returns {Promise<Object | any>} The response contain the operation status and the list of users
     * 
     * @param {any} req - The request object
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
     * 
     * @messagePattern users.findAll
     * @description Get all users
@@ -64,7 +66,7 @@ export class UsersController {
       const userId = req.user.id;
 
       // Send de logs to logs microservice
-      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'users.findAll', 'Find all user request received', { limit, page });
+      await this.loggerService.logInfo(requestId, 'api-getawey', userId, 'users.findAll', 'Find all user request received', { filter: { limit, page }});
 
       // We convert the Observable to a Promise and catch the errors
       return await firstValueFrom(

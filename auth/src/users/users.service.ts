@@ -14,6 +14,8 @@ export class UsersService {
     * @returns {Promise<Object | any>} The list of users
     * @param {string} requestId - The request id
     * @param {string} userId - The user id
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
     * 
     * @messagePattern users.findAll
     * @description Get all users with the id and email and active status

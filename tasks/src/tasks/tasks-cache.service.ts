@@ -13,8 +13,11 @@ export class TasksCacheService {
     * 
     * @param requestId - The request id
     * @param userId - The user id
-    * @returns Promise<any> Tasks get of Redis
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
+    * 
     * @description Get all tasks from Redis, if not found, query the DB
+    * 
     * @returns {Promise<any>} The response contain the operation status and the tasks
     * 
     * @example
@@ -46,9 +49,9 @@ export class TasksCacheService {
     * }
     *
    */
-   async findAllRedis(requestId: string, userId: string): Promise<any> {
+   async findAllRedis(requestId: string, userId: string, limit: number = 0, page: number = 0): Promise<any> {
       try {
-         const redisKey = RedisKeys.ALLTASKS;
+         const redisKey = limit === 0 ? RedisKeys.ALLTASKS : `${RedisKeys.ALLTASKS}:limit=${limit}:page=${page}`;
 
          // Try to get tasks from Redis
          const cachedTasks = await this.redis.get(redisKey);
@@ -56,14 +59,14 @@ export class TasksCacheService {
          // Task found in Redis, return them
          if (cachedTasks) {
             // Send de logs to logs microservice and log the event
-            await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findAll', 'Task find all successfully (Redis)', { message: `${ JSON.parse(cachedTasks).tasks.length} tasks were found` });
+            await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findAll', 'Task find all successfully (Redis)', { message: `${ JSON.parse(cachedTasks).tasks.length} tasks were found`, filter: { limit, page } });
 
             // Return list of tasks
             return JSON.parse(cachedTasks);
          }
 
          // If not found in Redis, query the DB
-         const tasks = await this.tasksService.findAll(requestId, userId);
+         const tasks = await this.tasksService.findAll(requestId, userId, limit, page);
 
          // Save tasks in Redis for 1 hour
          await this.redis.set(redisKey, JSON.stringify(tasks), 'EX', 3600);
@@ -81,10 +84,13 @@ export class TasksCacheService {
     * @returns {Object} The response contain the operation status and the task
     * 
     * @description Get tasks from author from Redis, if not found, query the DB
+    * 
     * @param {Object} payloadBody - The author id, request id and user id
     * @param {string} payloadBody.authorId - The author id
     * @param {string} payloadBody.requestId - The request id
     * @param {string} payloadBody.userId - The user id
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
     * 
     * @example
     * // Example success response
@@ -121,9 +127,10 @@ export class TasksCacheService {
     * }
     * 
     */
-   async findByAuthorIdRedis(authorId: string, requestId: string, userId: string): Promise<any> {
+   async findByAuthorIdRedis(authorId: string, requestId: string, userId: string, limit: number = 0, page: number = 0): Promise<any> {
       try {
-         const redisKey = `${RedisKeys.AUTHORTASKS}:${authorId}`;
+         const redisKey = limit === 0 ? `${RedisKeys.AUTHORTASKS}:${authorId}` : `${RedisKeys.AUTHORTASKS}:${authorId}:limit=${limit}:page=${page}`;
+
 
          // Try to get tasks from Redis
          const cachedTasks = await this.redis.get(redisKey);
@@ -131,14 +138,14 @@ export class TasksCacheService {
          // Task found in Redis, return them
          if (cachedTasks) {
             // Send de logs to logs microservice and log the event
-            await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by author #${authorId} find all successfully`, { message: `${ cachedTasks.length} tasks were found` } );
+            await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by author #${authorId} find all successfully`, { message: `${ cachedTasks.length} tasks were found`, filter: { limit, page } } );
 
             // Return list of tasks
             return JSON.parse(cachedTasks);
          }
 
          // If not found in Redis, query the DB
-         const tasks = await this.tasksService.findByAuthorId(authorId, requestId, userId);
+         const tasks = await this.tasksService.findByAuthorId(authorId, requestId, userId, limit, page);
 
          // Save tasks in Redis for 1 hour
          await this.redis.set(redisKey, JSON.stringify(tasks), 'EX', 3600);
@@ -156,10 +163,13 @@ export class TasksCacheService {
     * @returns {Object} The response contain the operation status and the task
     * 
     * @description Get tasks assigned to user from Redis, if not found, query the DB
+    * 
     * @param {Object} payloadBody - The author id, request id and user id
     * @param {string} payloadBody.assignedId - The assigned id
     * @param {string} payloadBody.requestId - The request id
     * @param {string} payloadBody.userId - The user id
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
     * 
     * @example
     * // Example success response
@@ -196,9 +206,9 @@ export class TasksCacheService {
     * }
     * 
     */
-   async findByAssignedIdRedis(assignedId: string, requestId: string, userId: string): Promise<any> {
+   async findByAssignedIdRedis(assignedId: string, requestId: string, userId: string, limit: number = 0, page: number = 0): Promise<any> {
       try {
-         const redisKey = `${RedisKeys.ASSIGNEDTASK}:${assignedId}`;
+         const redisKey = limit === 0 ? `${RedisKeys.ASSIGNEDTASK}:${assignedId}` : `${RedisKeys.ASSIGNEDTASK}:${assignedId}:limit=${limit}:page=${page}`;
 
          // Try to get tasks from Redis
          const cachedTasks = await this.redis.get(redisKey);
@@ -206,14 +216,14 @@ export class TasksCacheService {
          // Task found in Redis, return them
          if (cachedTasks) {
             // Send de logs to logs microservice and log the event
-            await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by user assigned #${assignedId} find all successfully`, { message: `${cachedTasks.length} tasks were found` } );
+            await this.loggerService.logInfo(requestId, 'tasks', userId, 'tasks.findByAuthorId', `Task by user assigned #${assignedId} find all successfully`, { message: `${cachedTasks.length} tasks were found`, filter: { limit, page } } );
 
             // Return list of tasks
             return JSON.parse(cachedTasks);
          }
 
          // If not found in Redis, query the DB
-         const tasks = await this.tasksService.findByAuthorId(assignedId, requestId, userId);
+         const tasks = await this.tasksService.findByAuthorId(assignedId, requestId, userId, limit, page);
 
          // Save tasks in Redis for 1 hour
          await this.redis.set(redisKey, JSON.stringify(tasks), 'EX', 3600);

@@ -63,6 +63,8 @@ export class UserRepository {
     * @param {string[]} select - The values selected of the users to query
     * @param {number} limit - The limit of the users
     * @param {number} skip - The skip of the users
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} skip -  The current page number for pagination. The first page is 0.
     * @returns {Promise<User[]>} The list of users
     *
     */
@@ -71,7 +73,7 @@ export class UserRepository {
          const query = this.userModel.find({ active: true }).select(select);
 
          // If limit and skip are provided, add them to the query
-         if(limit > 0 && skip >=0 ) query.skip(skip).limit(limit);
+         if(limit > 0 && skip >= 0) query.skip(skip).limit(limit);
 
          return query.exec();
 

@@ -9,7 +9,7 @@ export async function logAndHandleError(
     serviceName: string, 
     userId: string = 'unknown', 
     eventType: string
-) {
+) {    
     const { status, message } = extractErrorDetails(error);
 
     if (status >= 500) {

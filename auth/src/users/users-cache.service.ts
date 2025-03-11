@@ -12,6 +12,8 @@ export class UsersCacheService {
     * 
     * @param requestId - The request id
     * @param userId - The user id
+    * @param {number} limit - The number of users to retrieve per page. Defaults to a specified value if not provided.
+    * @param {number} page -  The current page number for pagination. The first page is 0.
     * @returns Promise<any> Tasks get of Redis
     * @description Get tasks from Redis, if not found, query the DB
     * @returns {Promise<any>} The response contain the operation status and the tasks
@@ -47,7 +49,7 @@ export class UsersCacheService {
    */
    async getUsers(requestId: string, userId: string, limit: number = 0, page: number = 0): Promise<any> {
       try { 
-         let redisKey = limit === 0 ? `AllUsers` : `AllUsers:limit=${limit}:page=${page}`;
+         const redisKey = limit === 0 ? `AllUsers` : `AllUsers:limit=${limit}:page=${page}`;
 
          // Try to get users from Redis
          const cachedUsers = await this.redis.get(redisKey);
@@ -55,7 +57,7 @@ export class UsersCacheService {
          // Task found in Redis, return them
          if (cachedUsers) {
             // Send de logs to logs microservice and log the event
-            await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully (Redis)', { message: `${JSON.parse(cachedUsers).users.length} users were found` });
+            await this.loggerService.logInfo(requestId, 'auth', userId, 'users.findAll', 'Users find all successfully (Redis)', { message: `${JSON.parse(cachedUsers).users.length} users were found`, filter: { limit, page } });
 
             // Return list of users
             return JSON.parse(cachedUsers);
