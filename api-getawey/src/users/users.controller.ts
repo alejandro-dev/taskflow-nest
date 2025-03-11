@@ -5,6 +5,9 @@ import { Services } from 'src/enums/services.enum';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { LoggerService } from 'src/logs/logs.service';
 import { catchError, firstValueFrom } from 'rxjs';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { RolesEnum } from 'src/enums/roles.enum';
+import { Roles } from 'src/decorators/roles.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -58,7 +61,8 @@ export class UsersController {
     *    "status": "error",
     *    "message": "Internal Server Error"
     */
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles(RolesEnum.ADMIN, RolesEnum.MANAGER)
    @Get()
    async findAll(@Request() req: any, @Query('limit') limit: number, @Query('page') page: number): Promise<Object | any> {
       // Generate a request id to log the request
