@@ -170,12 +170,12 @@ Por defecto, el proyecto se inicia en el puerto 3000.
 
 | Método  | Ruta                                       | Descripción                                     | Roles          |
 | ------- | ------------------------------------------ | ----------------------------------------------- | -------------- |
-| POST    | /api/tasks                                 | Registro de tareas                              | admin, manager |
-| GET     | /api/tasks/:id                             | Obtener una tarea                               |                |
-| PUT     | /api/tasks/:id                             | Actualizar una tarea                            |                |
-| DELETE  | /api/tasks/:id                             | Eliminar una tarea                              | admin, manager |
-| GET     | /api/tasks?limit=&page=                    | Obtener todas las tareas                        | admin          |
-| GET     | /api/tasks/assigned/:userId?limit=&page=   | Obtener todas las tareas de un usuario          |                |
-| GET     | /api/tasks/author/:authorId?limit=&page=   | Obtener todas las tareas de un autor de tareas  | admin, manager |
-| PATCH   | /api/tasks/:taskId/change-status           | Modificar el estado de una tarea                |                |
-| PATCH   | /api/tasks/:taskId/assign-user             | Asignar un usuario a una tarea                  | admin, manager |
+| POST    | /tasks                                 | Registro de tareas                              | admin, manager |
+| GET     | /tasks/:id                             | Obtener una tarea                               |                |
+| PUT     | /tasks/:id                             | Actualizar una tarea                            |                |
+| DELETE  | /tasks/:id                             | Eliminar una tarea                              | admin, manager |
+| GET     | /tasks?limit=&page=                    | Obtener todas las tareas                        | admin          |
+| GET     | /tasks/assigned/:userId?limit=&page=   | Obtener todas las tareas de un usuario          |                |
+| GET     | /tasks/author/:authorId?limit=&page=   | Obtener todas las tareas de un autor de tareas  | admin, manager |
+| PATCH   | /tasks/:taskId/change-status           | Modificar el estado de una tarea                |                |
+| PATCH   | /tasks/:taskId/assign-user             | Asignar un usuario a una tarea                  | admin, manager |
