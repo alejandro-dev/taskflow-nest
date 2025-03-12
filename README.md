@@ -83,6 +83,7 @@ Este servicio se encarda de:
 - Cambiar el estado de una tarea.
 - Asignar el usuario de una tarea.
 
+
 ### 4. Logs
 
 El servicio de gestión de logs se encarga de almacenar los registros de eventos y los enviar a la base de datos. El microservicio está creado sobre una base de datos MongoDB. Está planteado con una estructura sencilla por si más tarde se quiere implementar Prometheus o Grafana para monitoreo. El servicio se encarga de:
@@ -139,13 +140,31 @@ La base de datos se encarga de almacenar los datos de las tareas.
 git clone https://github.com/alejandro-dev/taskflow-nest.git
 ```
 
-### 2. Ejecutar el proyecto
+### 2. Configurar el archivo docker-compose.yml y dockerfile
+Configuramos el archivo docker-compose.yml y dockerfile para cada proyecto a nuestro gusto o lo dejamos por defecto como está.
+
+### 3. Configurar los archivos de entorno de los proyectos
+Accedemos a cada proyecto y ejecutamos el comando:
+```
+cp .env.example .env
+```
+Si hemos modificado los archivos docker-compose.yml o dockerfile, deberemos adaptarlos a las modificaciones.
+
+### 4. Ejecutar el proyecto
 
 ```
 docker-compose up -d
 ```
 
 Por defecto, el proyecto se inicia en el puerto 3000.
+
+### 5. Ejecutar la base de datos del microservicio de Tasks 
+
+```
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
 
 ---
 
@@ -170,12 +189,27 @@ Por defecto, el proyecto se inicia en el puerto 3000.
 
 | Método  | Ruta                                       | Descripción                                     | Roles          |
 | ------- | ------------------------------------------ | ----------------------------------------------- | -------------- |
-| POST    | /tasks                                 | Registro de tareas                              | admin, manager |
-| GET     | /tasks/:id                             | Obtener una tarea                               |                |
-| PUT     | /tasks/:id                             | Actualizar una tarea                            |                |
-| DELETE  | /tasks/:id                             | Eliminar una tarea                              | admin, manager |
-| GET     | /tasks?limit=&page=                    | Obtener todas las tareas                        | admin          |
-| GET     | /tasks/assigned/:userId?limit=&page=   | Obtener todas las tareas de un usuario          |                |
-| GET     | /tasks/author/:authorId?limit=&page=   | Obtener todas las tareas de un autor de tareas  | admin, manager |
-| PATCH   | /tasks/:taskId/change-status           | Modificar el estado de una tarea                |                |
-| PATCH   | /tasks/:taskId/assign-user             | Asignar un usuario a una tarea                  | admin, manager |
+| POST    | /tasks                                 | Registro de tareas                              | admin, manager     |
+| GET     | /tasks/:id                             | Obtener una tarea                               |                    |
+| PUT     | /tasks/:id                             | Actualizar una tarea                            |                    |
+| DELETE  | /tasks/:id                             | Eliminar una tarea                              | admin, manager     |
+| GET     | /tasks?limit=&page=                    | Obtener todas las tareas                        | admin              |
+| GET     | /tasks/assigned/:userId?limit=&page=   | Obtener todas las tareas de un usuario          |                    |
+| GET     | /tasks/author/:authorId?limit=&page=   | Obtener todas las tareas de un autor de tareas  | admin, manager     |
+| PATCH   | /tasks/:taskId/change-status           | Modificar el estado de una tarea                |                    |
+| PATCH   | /tasks/:taskId/assign-user             | Asignar un usuario a una tarea                  | admin, manager     |
+
+## Herramientas
+
+### 1. Para las visualización de la base de datos de MongoDB
+
+https://www.mongodb.com/try/download/compass
+
+### 2. Para la visualización de la base de datos de PostgreSQL
+
+https://www.postgresql.org/download/
+
+o
+
+https://tableplus.com/download
+
